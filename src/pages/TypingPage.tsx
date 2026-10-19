@@ -18,11 +18,13 @@ import { cn } from '../lib/utils'
 
 type Phase = 'idle' | 'running' | 'done'
 
+const NBSP = '\u00A0'
+
 export default function TypingPage() {
   const { t } = useTranslation()
   const [lang, setLang] = useState<TypingLang>('en')
   const passages = useMemo(() => getPassages(lang), [lang])
-  const [passageId, setPassageId] = useState(passages[0]?.id || '')
+  const [passageId, setPassageId] = useState(() => getPassages('en')[0]?.id || '')
   const passage: TypingPassage | undefined =
     passages.find((p) => p.id === passageId) || passages[0]
 
@@ -35,26 +37,53 @@ export default function TypingPage() {
     () => getSettings().showAmharicKeyboardDefault
   )
   const [resultsVersion, setResultsVersion] = useState(0)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const savedRef = useRef(false)
   const phaseRef = useRef<Phase>('idle')
-  const startedAtRef = useRef<number | null>(null)
+  const inputRef = useRef('')
+  const targetLenRef = useRef(0)
 
   phaseRef.current = phase
-  startedAtRef.current = startedAt
+  inputRef.current = input
+
+  const target = passage?.text || ''
+  const targetChars = useMemo(() => graphemes(target), [target])
+  const targetLen = targetChars.length
+  targetLenRef.current = targetLen
+
+  const applyInput = useCallback((nextRaw: string) => {
+    if (phaseRef.current === 'done') return
+
+    const limit = targetLenRef.current
+    const g = graphemes(nextRaw)
+    const next =
+      limit > 0 && g.length > limit ? g.slice(0, limit).join('') : nextRaw
+
+    if (phaseRef.current === 'idle' && next.length > 0) {
+      const now = Date.now()
+      setPhase('running')
+      setStartedAt(now)
+    }
+
+    inputRef.current = next
+    setInput(next)
+  }, [])
 
   const reset = useCallback(() => {
     savedRef.current = false
+    inputRef.current = ''
     setInput('')
     setPhase('idle')
     setStartedAt(null)
     setEndedAt(null)
     setLiveMs(0)
-    requestAnimationFrame(() => inputRef.current?.focus())
+    requestAnimationFrame(() => textareaRef.current?.focus())
   }, [])
 
   useEffect(() => {
-    setPassageId(getPassages(lang)[0]?.id || '')
+    const list = getPassages(lang)
+    setPassageId(list[0]?.id || '')
     reset()
     if (lang === 'am') {
       setShowKeyboard(getSettings().showAmharicKeyboardDefault)
@@ -67,14 +96,9 @@ export default function TypingPage() {
     return () => clearInterval(id)
   }, [phase, startedAt])
 
-  const target = passage?.text || ''
-  const targetChars = useMemo(() => graphemes(target), [target])
-  const targetLen = targetChars.length
-
   const { statuses, correct, errors } = compareInput(target, input)
   const inputLen = graphemes(input).length
 
-  /** Finish once the learner has typed the full passage length (once only). */
   useEffect(() => {
     if (phase !== 'running' || !startedAt || !passage || targetLen === 0) return
     if (inputLen < targetLen) return
@@ -109,25 +133,6 @@ export default function TypingPage() {
   const wpm =
     phase === 'idle' || durationMs <= 0 ? 0 : calcWpm(correct, durationMs)
   const accuracy = calcAccuracy(correct, correct + errors)
-
-  const onChange = (value: string) => {
-    if (phaseRef.current === 'done') return
-
-    // Cap at passage length so extra keystrokes do not inflate errors after finish
-    const g = graphemes(value)
-    const capped =
-      targetLen > 0 && g.length > targetLen
-        ? g.slice(0, targetLen).join('')
-        : value
-
-    if (phaseRef.current === 'idle' && capped.length > 0) {
-      const now = Date.now()
-      setPhase('running')
-      setStartedAt(now)
-      startedAtRef.current = now
-    }
-    setInput(capped)
-  }
 
   const results = useMemo(
     () => getTypingResults().slice(0, 5),
@@ -199,7 +204,11 @@ export default function TypingPage() {
 
       <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
         <div
-          className="mb-4 min-h-[4.5rem] text-lg leading-relaxed tracking-wide text-gray-800 sm:text-xl"
+          role="button"
+          tabIndex={0}
+          onClick={() => textareaRef.current?.focus()}
+          onKeyDown={() => textareaRef.current?.focus()}
+          className="mb-4 min-h-[4.5rem] cursor-text text-lg leading-relaxed tracking-wide text-gray-800 sm:text-xl"
           aria-label="Passage to type"
         >
           {targetChars.map((ch, idx) => {
@@ -214,16 +223,16 @@ export default function TypingPage() {
                   st === 'pending' && 'text-gray-400'
                 )}
               >
-                {ch === ' ' ? '\u00a0' : ch}
+                {ch === ' ' ? NBSP : ch}
               </span>
             )
           })}
         </div>
 
         <textarea
-          ref={inputRef}
+          ref={textareaRef}
           value={input}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => applyInput(e.target.value)}
           disabled={phase === 'done'}
           rows={3}
           className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-lg outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:bg-gray-50"
@@ -246,11 +255,11 @@ export default function TypingPage() {
             </button>
             {showKeyboard && (
               <AmharicKeyboard
-                onKey={(c) => onChange(input + c)}
+                onKey={(c) => applyInput(inputRef.current + c)}
                 onBackspace={() =>
-                  onChange(graphemes(input).slice(0, -1).join(''))
+                  applyInput(graphemes(inputRef.current).slice(0, -1).join(''))
                 }
-                onSpace={() => onChange(input + ' ')}
+                onSpace={() => applyInput(inputRef.current + ' ')}
               />
             )}
           </div>
