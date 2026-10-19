@@ -33,24 +33,33 @@ export function getSettings(): AppSettings {
 export function saveSettings(partial: Partial<AppSettings>): AppSettings {
   const next = { ...getSettings(), ...partial }
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(next))
+  try {
+    window.dispatchEvent(new Event('storage'))
+  } catch {
+    /* ignore */
+  }
   return next
 }
 
-/** Keys used by Type mocks — for "clear my data" */
-export const DATA_KEYS = [
+/** Progress / practice only */
+export const LEARNING_DATA_KEYS = [
   'type_user_progress',
   'type_typing_results',
   'type_vocab_known',
+] as const
+
+/** Everything local (including account + admin mock) */
+export const DATA_KEYS = [
+  ...LEARNING_DATA_KEYS,
   'type_admin_courses',
   'type_admin_audit',
   'type_user_role',
   'mockUser',
 ] as const
 
+/** Clear progress & practice; keep login, settings, role. */
 export function clearLearningData(): void {
-  const keep = new Set(['mockUser'])
-  for (const k of DATA_KEYS) {
-    if (keep.has(k)) continue
+  for (const k of LEARNING_DATA_KEYS) {
     localStorage.removeItem(k)
   }
 }
