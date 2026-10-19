@@ -164,35 +164,22 @@ export const amharicLessonContent: Record<string, AmharicLessonContent> = {
     type: 'fidel_intro',
     title: 'What is Fidel?',
     title_am: 'ፊደል ምንድን ነው?',
-    body: `Fidel (ፊደል) is the name of the Ethiopic writing system used for Amharic, Tigrinya, and other languages of Ethiopia and Eritrea.
-
-Unlike the English alphabet, each Fidel character represents a **syllable** (consonant + vowel), not a single letter.
-
-There are about 33 base consonants. Each has 7 forms for the 7 vowel orders:
-1. ä (as in "about")
-2. u
-3. i
-4. a
-5. e
-6. ə (or silent)
-7. o
-
-Learning Fidel family by family is the traditional and most effective way.`,
-    body_am: `ፊደል የኢትዮጵያና የኤርትራ ቋንቋዎች የሚጻፍበት የጽሕፈት ስርዓት ነው።
-
-ከእንግሊዝኛ ፊደል በተለየ እያንዳንዱ የፊደል ቅርጽ አንድ **የድምፅ ክፍለ ቃል** (ተነባቢ + አናባቢ) ይወክላል።
-
-በግምት 33 መሰረታዊ ተነባቢዎች አሉ። እያንዳንዱ 7 የአናባቢ ቅርጾች አሉት።
-
-ፊደልን በቤተሰብ በቤተሰብ መማር ባህላዊ እና ውጤታማ መንገድ ነው።`,
+    body: `Fidel (ፊደል) is the name of the Ethiopic writing system used for Amharic, Tigrinya, and other languages of Ethiopia and Eritrea.\n\nUnlike the English alphabet, each Fidel character represents a **syllable** (consonant + vowel), not a single letter.\n\nThere are about 33 base consonants. Each has 7 forms for the 7 vowel orders:\n1. ä (as in "about")\n2. u\n3. i\n4. a\n5. e\n6. ə (or silent)\n7. o\n\nLearning Fidel family by family is the traditional and most effective way.`,
+    body_am: `ፊደል የኢትዮጵያና የኤርትራ ቋንቋዎች የሚጻፍበት የጽሕፈት ስርዓት ነው።\n\nከእንግሊዝኛ ፊደል በተለየ እያንዳንዱ የፊደል ቅርጽ አንድ **የድምፅ ክፍለ ቃል** (ተነባቢ + አናባቢ) ይወክላል።\n\nበግምት 33 መሰረታዊ ተነባቢዎች አሉ። እያንዳንዱ 7 የአናባቢ ቅርጾች አሉት።\n\nፊደልን በቤተሰብ በቤተሰብ መማር ባህላዊ እና ውጤታማ መንገድ ነው።`,
     exercises: [
       {
         type: 'multiple_choice',
         question: 'What does each Fidel character represent?',
         question_am: 'እያንዳንዱ የፊደል ቅርጽ ምን ይወክላል?',
-        options: ['A single letter', 'A syllable (consonant + vowel)', 'Only a vowel', 'Only a consonant'],
+        options: [
+          'A single letter',
+          'A syllable (consonant + vowel)',
+          'Only a vowel',
+          'Only a consonant',
+        ],
         correctIndex: 1,
-        explanation: 'Each Fidel character is a syllabary symbol — consonant + vowel together.',
+        explanation:
+          'Each Fidel character is a syllabary symbol — consonant + vowel together.',
       },
       {
         type: 'multiple_choice',
@@ -376,14 +363,15 @@ export const amharicReadingContent: Record<string, AmharicLessonContent> = {
     title: 'Simple Sentences',
     title_am: 'ቀላል ዓረፍተ ነገሮች',
     intro: 'Read short Amharic sentences and check your understanding.',
-    passage: 'ሰላም። ስሜ አበበ ነው።
+    // Template literal required — single-quoted strings cannot span lines
+    passage: `ሰላም። ስሜ አበበ ነው።
 እኔ ተማሪ ነኝ።
 ውሃ እፈልጋለሁ።
-መጽሐፍ አለኝ።',
-    passage_en: 'Hello. My name is Abebe.
+መጽሐፍ አለኝ።`,
+    passage_en: `Hello. My name is Abebe.
 I am a student.
 I want water.
-I have a book.',
+I have a book.`,
     exercises: [
       {
         type: 'multiple_choice',
