@@ -272,7 +272,7 @@ export default function AudioPlayer({
           {useTts && (
             <p className="mt-2 text-xs text-gray-400">
               {isAmharic
-                ? 'አማርኛ · system voice if installed, else online audio'
+                ? 'አማርኛ · system voice if installed, else online audio (needs network)'
                 : 'Browser voice · unmute tab · Chrome/Edge best'}
             </p>
           )}
