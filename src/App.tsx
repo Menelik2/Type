@@ -10,6 +10,8 @@ import CourseDetailsPage from './pages/CourseDetailsPage'
 import DashboardPage from './pages/DashboardPage'
 import CoursePlayerPage from './pages/CoursePlayerPage'
 import TypingPage from './pages/TypingPage'
+import VocabularyPage from './pages/VocabularyPage'
+import ProgressPage from './pages/ProgressPage'
 import RequireStaff from './components/admin/RequireStaff'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminCourses from './pages/admin/AdminCourses'
@@ -38,9 +40,9 @@ function App() {
         <Route path="/learn/:slug" element={<CoursePlayerPage />} />
         <Route path="/learn/english" element={<CoursesPage />} />
         <Route path="/learn/amharic" element={<CoursesPage />} />
-        <Route path="/vocabulary" element={<ComingSoon title="Vocabulary" />} />
+        <Route path="/vocabulary" element={<VocabularyPage />} />
         <Route path="/typing" element={<TypingPage />} />
-        <Route path="/progress" element={<ComingSoon title="Progress" />} />
+        <Route path="/progress" element={<ProgressPage />} />
         <Route path="/settings" element={<ComingSoon title="Settings" />} />
         <Route path="/profile" element={<ComingSoon title="Profile" />} />
 
