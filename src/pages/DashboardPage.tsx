@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BookOpen, Clock, Flame, Target, ArrowRight } from 'lucide-react'
@@ -10,14 +10,27 @@ import {
   getCourseProgress,
 } from '../lib/progress'
 import { useAuth } from '../hooks/useAuth'
+import { getSettings } from '../lib/settings'
 import { cn } from '../lib/utils'
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const interfaceLang = (i18n.language === 'am' ? 'am' : 'en') as 'en' | 'am'
+  const [tick, setTick] = useState(0)
 
-  const displayName = user?.name || 'Learner'
+  useEffect(() => {
+    const sync = () => setTick((n) => n + 1)
+    window.addEventListener('focus', sync)
+    window.addEventListener('storage', sync)
+    return () => {
+      window.removeEventListener('focus', sync)
+      window.removeEventListener('storage', sync)
+    }
+  }, [])
+
+  const displayName =
+    getSettings().displayName || user?.name || user?.email?.split('@')[0] || 'Learner'
 
   const enrolledCourses = useMemo(() => {
     const ids = getEnrolledCourseIds()
@@ -34,9 +47,17 @@ export default function DashboardPage() {
         const tb = b.lastAccessed ? new Date(b.lastAccessed).getTime() : 0
         return tb - ta
       })
-  }, [])
+    // tick forces re-read of localStorage after focus/storage
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick])
 
   const totalCompletedLessons = enrolledCourses.reduce((sum, e) => sum + e.completed, 0)
+  const learningLang = getSettings().learningLang
+
+  const recommended = sampleCourses
+    .filter((c) => !getEnrolledCourseIds().includes(c.id))
+    .filter((c) => !learningLang || c.learningLanguage === learningLang)
+    .slice(0, 3)
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -47,19 +68,39 @@ export default function DashboardPage() {
         <p className="mt-1 text-gray-600">Continue your learning journey</p>
       </div>
 
-      {/* Stats – based on real local progress */}
       <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={Flame} label="Day streak" value="—" accent="text-orange-500" />
-        <StatCard icon={Clock} label="Courses enrolled" value={String(enrolledCourses.length)} accent="text-indigo-500" />
-        <StatCard icon={BookOpen} label="Lessons done" value={String(totalCompletedLessons)} accent="text-emerald-500" />
-        <StatCard icon={Target} label="In progress" value={String(enrolledCourses.filter((e) => e.percent > 0 && e.percent < 100).length)} accent="text-purple-500" />
+        <StatCard
+          icon={Clock}
+          label="Courses enrolled"
+          value={String(enrolledCourses.length)}
+          accent="text-indigo-500"
+        />
+        <StatCard
+          icon={BookOpen}
+          label="Lessons done"
+          value={String(totalCompletedLessons)}
+          accent="text-emerald-500"
+        />
+        <StatCard
+          icon={Target}
+          label="In progress"
+          value={String(
+            enrolledCourses.filter((e) => e.percent > 0 && e.percent < 100).length
+          )}
+          accent="text-purple-500"
+        />
       </div>
 
-      {/* Continue Learning */}
       <section className="mb-10">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.continueLearning')}</h2>
-          <Link to="/courses" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {t('dashboard.continueLearning')}
+          </h2>
+          <Link
+            to="/courses"
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          >
             {t('dashboard.exploreCourses')}
           </Link>
         </div>
@@ -130,36 +171,32 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* Recommended */}
       <section>
         <h2 className="mb-4 text-lg font-semibold text-gray-900">Recommended for you</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sampleCourses
-            .filter((c) => !getEnrolledCourseIds().includes(c.id))
-            .slice(0, 3)
-            .map((course) => {
-              const title = course.title[interfaceLang] || course.title.en
-              return (
-                <Link
-                  key={course.id}
-                  to={`/courses/${course.slug}`}
-                  className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md"
+          {recommended.map((course) => {
+            const title = course.title[interfaceLang] || course.title.en
+            return (
+              <Link
+                key={course.id}
+                to={`/courses/${course.slug}`}
+                className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md"
+              >
+                <span
+                  className={cn(
+                    'rounded-full px-2.5 py-0.5 text-xs font-medium',
+                    course.learningLanguage === 'en'
+                      ? 'bg-indigo-100 text-indigo-700'
+                      : 'bg-amber-100 text-amber-800'
+                  )}
                 >
-                  <span
-                    className={cn(
-                      'rounded-full px-2.5 py-0.5 text-xs font-medium',
-                      course.learningLanguage === 'en'
-                        ? 'bg-indigo-100 text-indigo-700'
-                        : 'bg-amber-100 text-amber-800'
-                    )}
-                  >
-                    {course.learningLanguage === 'en' ? 'English' : 'አማርኛ'}
-                  </span>
-                  <h3 className="mt-2 font-semibold text-gray-900">{title}</h3>
-                  <p className="mt-1 text-sm text-gray-500">{course.lessonsCount} lessons</p>
-                </Link>
-              )
-            })}
+                  {course.learningLanguage === 'en' ? 'English' : 'አማርኛ'}
+                </span>
+                <h3 className="mt-2 font-semibold text-gray-900">{title}</h3>
+                <p className="mt-1 text-sm text-gray-500">{course.lessonsCount} lessons</p>
+              </Link>
+            )
+          })}
         </div>
       </section>
     </div>
