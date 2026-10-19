@@ -32,9 +32,9 @@ describe('metrics', () => {
   })
 
   it('calculates WPM', () => {
-    // 50 correct chars in 1 minute => 10 WPM
     expect(calcWpm(50, 60000)).toBe(10)
     expect(calcWpm(0, 1000)).toBe(0)
+    expect(calcWpm(10, 0)).toBe(0)
   })
 })
 
@@ -45,6 +45,21 @@ describe('compareInput', () => {
     expect(errors).toBe(1)
     expect(statuses[0]).toBe('correct')
     expect(statuses[1]).toBe('incorrect')
+    expect(statuses[2]).toBe('correct')
+  })
+
+  it('marks current at caret when partially typed', () => {
+    const { statuses } = compareInput('hello', 'he')
+    expect(statuses[0]).toBe('correct')
+    expect(statuses[1]).toBe('correct')
+    expect(statuses[2]).toBe('current')
+    expect(statuses[3]).toBe('pending')
+  })
+
+  it('marks first char current when empty', () => {
+    const { statuses } = compareInput('ab', '')
+    expect(statuses[0]).toBe('current')
+    expect(statuses[1]).toBe('pending')
   })
 })
 
