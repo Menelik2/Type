@@ -24,9 +24,11 @@
     "logout": "ውጣ",
     "email": "ኢሜይል",
     "password": "የይለፍ ቃል",
+    "name": "ሙሉ ስም",
     "forgotPassword": "የይለፍ ቃል ረሳህ?",
     "noAccount": "መለያ የለህም?",
-    "hasAccount": "መለያ አለህ?"
+    "hasAccount": "መለያ አለህ?",
+    "invalidCredentials": "ልክ ያልሆነ ኢሜይል ወይም የይለፍ ቃል"
   },
   "landing": {
     "heroTitle": "እንግሊዝኛ እና አማርኛን ተቆጣጠር",
