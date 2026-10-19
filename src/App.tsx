@@ -9,6 +9,12 @@ import CoursesPage from './pages/CoursesPage'
 import CourseDetailsPage from './pages/CourseDetailsPage'
 import DashboardPage from './pages/DashboardPage'
 import CoursePlayerPage from './pages/CoursePlayerPage'
+import RequireStaff from './components/admin/RequireStaff'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminCourses from './pages/admin/AdminCourses'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminAudit from './pages/admin/AdminAudit'
+import AdminTranslations from './pages/admin/AdminTranslations'
 
 function App() {
   const { i18n } = useTranslation()
@@ -19,29 +25,32 @@ function App() {
 
   return (
     <Routes>
-      {/* Public marketing */}
       <Route path="/" element={<LandingPage />} />
-
-      {/* Auth (standalone layout) */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* App shell */}
       <Route element={<Layout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/my-courses" element={<DashboardPage />} />
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/courses/:slug" element={<CourseDetailsPage />} />
         <Route path="/learn/:slug" element={<CoursePlayerPage />} />
-        {/* Shortcuts */}
         <Route path="/learn/english" element={<CoursesPage />} />
         <Route path="/learn/amharic" element={<CoursesPage />} />
-        {/* Placeholders for later phases */}
         <Route path="/vocabulary" element={<ComingSoon title="Vocabulary" />} />
         <Route path="/typing" element={<ComingSoon title="Typing Practice" />} />
         <Route path="/progress" element={<ComingSoon title="Progress" />} />
         <Route path="/settings" element={<ComingSoon title="Settings" />} />
         <Route path="/profile" element={<ComingSoon title="Profile" />} />
+
+        {/* Admin — staff only */}
+        <Route path="/admin" element={<RequireStaff />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="courses" element={<AdminCourses />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="audit" element={<AdminAudit />} />
+          <Route path="translations" element={<AdminTranslations />} />
+        </Route>
       </Route>
     </Routes>
   )
