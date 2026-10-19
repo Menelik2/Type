@@ -1,11 +1,6 @@
 /**
- * Browser voice helper with strong Amharic support.
- *
- * Strategy:
- * 1. Prefer SpeechSynthesis when a matching voice is installed
- * 2. For Amharic (and as EN fallback), play Google Translate TTS audio
- *    (works without API keys; suitable for learning MVP)
- * 3. Later: replace with Supabase Storage recordings via AudioPlayer `src`
+ * Browser voice helper with Amharic support.
+ * Native SpeechSynthesis when available; Translate TTS audio fallback otherwise.
  */
 
 export type VoiceLang = 'en' | 'am'
@@ -55,8 +50,8 @@ export function warmUpVoices() {
   void loadVoices()
 }
 
-export function stopSpeaking() {
-  speakToken += 1
+/** Stop audio/TTS without invalidating an in-flight speak token. */
+function haltMedia() {
   if (isTtsAvailable()) {
     try {
       window.speechSynthesis.cancel()
@@ -67,6 +62,8 @@ export function stopSpeaking() {
   }
   if (currentAudio) {
     try {
+      currentAudio.onended = null
+      currentAudio.onerror = null
       currentAudio.pause()
       currentAudio.removeAttribute('src')
       currentAudio.load()
@@ -75,6 +72,12 @@ export function stopSpeaking() {
     }
     currentAudio = null
   }
+}
+
+/** Public stop: cancels playback and invalidates pending speak() calls. */
+export function stopSpeaking() {
+  speakToken += 1
+  haltMedia()
 }
 
 export function pickVoice(
@@ -98,7 +101,6 @@ export function pickVoice(
   )
 }
 
-/** True when the device lists an Amharic (or Ethiopic-script) voice. */
 export async function hasAmharicVoice(): Promise<boolean> {
   const voices = await loadVoices()
   return voices.some((v) => {
@@ -114,13 +116,11 @@ function toTl(lang: VoiceLang | string): string {
   return lang === 'am' ? 'am' : 'en'
 }
 
-/** Split text into short chunks for Translate TTS length limits. */
 function chunkText(text: string, maxLen = 160): string[] {
   const cleaned = text.replace(/\s+/g, ' ').trim()
   if (cleaned.length <= maxLen) return [cleaned]
 
   const parts: string[] = []
-  // Prefer sentence boundaries (Latin + Ethiopic)
   const sentences = cleaned.split(/(?<=[.!?።፧])\s+/)
   let buf = ''
   for (const s of sentences) {
@@ -131,7 +131,6 @@ function chunkText(text: string, maxLen = 160): string[] {
       if (s.length <= maxLen) {
         buf = s
       } else {
-        // Hard-split long segment
         for (let i = 0; i < s.length; i += maxLen) {
           parts.push(s.slice(i, i + maxLen))
         }
@@ -143,14 +142,9 @@ function chunkText(text: string, maxLen = 160): string[] {
   return parts.filter(Boolean)
 }
 
-/**
- * Google Translate TTS audio URL (no API key).
- * Used primarily so Amharic works when the OS has no am-ET voice.
- */
 export function translateTtsUrl(text: string, lang: VoiceLang | string): string {
   const tl = toTl(lang)
   const q = encodeURIComponent(text)
-  // client=tw-ob is the most widely compatible public endpoint
   return `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${tl}&q=${q}`
 }
 
@@ -177,7 +171,6 @@ function playAudioUrl(url: string, token: number): Promise<boolean> {
       resolve(false)
     }
 
-    // Must set src after handlers
     audio.src = url
     const p = audio.play()
     if (p && typeof p.then === 'function') {
@@ -217,7 +210,6 @@ function normalizeRate(rate: number) {
 export type SpeakOptions = {
   lang?: VoiceLang | string
   rate?: number
-  /** Force Translate audio even if a native voice exists */
   forceTranslate?: boolean
   onStart?: () => void
   onEnd?: () => void
@@ -231,12 +223,13 @@ export async function speak(text: string, opts: SpeakOptions = {}): Promise<bool
     return false
   }
 
+  // Invalidate previous speaks, then start a new token
+  speakToken += 1
+  haltMedia()
   const token = ++speakToken
-  stopSpeaking()
-  // stopSpeaking increments token — restore ours
-  speakToken = token
 
-  await new Promise((r) => setTimeout(r, 40))
+  // Brief pause so Chrome accepts the next utterance after cancel
+  await new Promise((r) => setTimeout(r, 80))
   if (token !== speakToken) return false
 
   const langOpt = opts.lang || 'en'
@@ -252,10 +245,8 @@ export async function speak(text: string, opts: SpeakOptions = {}): Promise<bool
     !opts.forceTranslate &&
     isTtsAvailable() &&
     !!nativeVoice &&
-    // Prefer native for English always; for Amharic only if voice is real am-*
     (!isAm || nativeVoice.lang.toLowerCase().startsWith('am'))
 
-  // —— Native SpeechSynthesis path ——
   if (useNative && nativeVoice) {
     return new Promise((resolve) => {
       if (token !== speakToken) {
@@ -293,7 +284,6 @@ export async function speak(text: string, opts: SpeakOptions = {}): Promise<bool
           finish(false)
           return
         }
-        // Fall through to Translate on native failure
         void speakViaTranslate(trimmed, langOpt, token, opts.onStart).then((ok) => {
           if (ok) {
             opts.onEnd?.()
@@ -348,7 +338,6 @@ export async function speak(text: string, opts: SpeakOptions = {}): Promise<bool
     })
   }
 
-  // —— Amharic (and any missing native voice): Translate TTS audio ——
   opts.onStart?.()
   const ok = await speakViaTranslate(trimmed, langOpt, token)
   if (token !== speakToken) return false
