@@ -27,14 +27,22 @@ function read(): UserProgress {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return { enrollments: {} }
-    return JSON.parse(raw) as UserProgress
+    const parsed = JSON.parse(raw) as UserProgress
+    if (!parsed || typeof parsed !== 'object' || !parsed.enrollments) {
+      return { enrollments: {} }
+    }
+    return parsed
   } catch {
     return { enrollments: {} }
   }
 }
 
 function write(data: UserProgress) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  } catch {
+    /* quota / private mode */
+  }
 }
 
 export function getProgress(): UserProgress {
@@ -85,7 +93,13 @@ export function markLessonComplete(courseId: string, lessonId: string) {
 
 export function setLastAccessed(courseId: string, lessonId: string) {
   const data = read()
-  if (!data.enrollments[courseId]) return
+  if (!data.enrollments[courseId]) {
+    data.enrollments[courseId] = {
+      courseId,
+      enrolledAt: new Date().toISOString(),
+      lessons: {},
+    }
+  }
   data.enrollments[courseId].lastLessonId = lessonId
   data.enrollments[courseId].lastAccessedAt = new Date().toISOString()
   write(data)
@@ -98,7 +112,7 @@ export function getCompletedLessonCount(courseId: string): number {
 }
 
 export function getProgressPercent(courseId: string, totalLessons: number): number {
-  if (totalLessons === 0) return 0
+  if (totalLessons <= 0) return 0
   const completed = getCompletedLessonCount(courseId)
   return Math.min(100, Math.round((completed / totalLessons) * 100))
 }
