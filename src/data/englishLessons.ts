@@ -1,15 +1,6 @@
 /**
- * English lesson content for Phase 3 MVP.
- * Each lesson has a type and structured content the Course Player can render.
+ * English lesson content — includes Phase 5 listening support.
  */
-
-export type ExerciseType =
-  | 'multiple_choice'
-  | 'fill_blank'
-  | 'flashcard'
-  | 'matching'
-  | 'true_false'
-  | 'spelling'
 
 export type VocabItem = {
   word: string
@@ -17,6 +8,8 @@ export type VocabItem = {
   example: string
   example_am: string
   phonetic?: string
+  /** Optional remote audio URL; TTS used when missing */
+  audioSrc?: string
 }
 
 export type MultipleChoiceQ = {
@@ -29,7 +22,7 @@ export type MultipleChoiceQ = {
 
 export type FillBlankQ = {
   type: 'fill_blank'
-  sentence: string // use ___ for blank
+  sentence: string
   answer: string
   hint?: string
 }
@@ -47,11 +40,35 @@ export type SpellingQ = {
   prompt: string
 }
 
+export type ListenChooseQ = {
+  type: 'listen_choose'
+  prompt: string
+  audioText: string
+  audioLang?: string
+  audioSrc?: string
+  options: string[]
+  correctIndex: number
+  explanation?: string
+}
+
+export type DictationQ = {
+  type: 'dictation'
+  prompt: string
+  audioText: string
+  audioLang?: string
+  audioSrc?: string
+  answer: string
+  acceptAlternatives?: string[]
+  hint?: string
+}
+
 export type Exercise =
   | MultipleChoiceQ
   | FillBlankQ
   | TrueFalseQ
   | SpellingQ
+  | ListenChooseQ
+  | DictationQ
 
 export type LessonContent =
   | {
@@ -77,17 +94,25 @@ export type LessonContent =
       exercises: Exercise[]
     }
   | {
+      type: 'listening'
+      title: string
+      intro: string
+      exercises: (ListenChooseQ | DictationQ)[]
+    }
+  | {
       type: 'text'
       title: string
       body: string
+      /** Optional full-lesson audio (TTS or file) */
+      audioText?: string
       exercises?: Exercise[]
     }
 
 export const englishLessonContent: Record<string, LessonContent> = {
-  // ── English for Beginners ──────────────────────────────────────
   l1: {
     type: 'text',
     title: 'English Alphabet',
+    audioText: 'The English alphabet has twenty-six letters. A B C D E F G H I J K L M N O P Q R S T U V W X Y Z.',
     body: `The English alphabet has 26 letters.
 
 **Uppercase:** A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
@@ -120,12 +145,20 @@ Practice saying each letter out loud.`,
         correct: true,
         explanation: 'Yes — in words like "my" or "happy", y acts as a vowel.',
       },
+      {
+        type: 'listen_choose',
+        prompt: 'Listen and choose the word you hear.',
+        audioText: 'Apple',
+        options: ['April', 'Apple', 'Apply', 'Able'],
+        correctIndex: 1,
+      },
     ],
   },
 
   l2: {
     type: 'text',
     title: 'Vowels & Consonants',
+    audioText: 'Vowels are a, e, i, o, and u. Sometimes y is also a vowel.',
     body: `**Vowels** are sounds made with an open mouth: a, e, i, o, u.
 
 **Consonants** are made by blocking air with the tongue, teeth or lips.
@@ -149,32 +182,50 @@ Examples:
         answer: 'u',
         hint: 'The last vowel in the list a e i o ?',
       },
+      {
+        type: 'dictation',
+        prompt: 'Listen and type the sentence.',
+        audioText: 'The cat is on the mat.',
+        answer: 'The cat is on the mat.',
+        acceptAlternatives: ['the cat is on the mat'],
+        hint: 'A short sentence about a cat',
+      },
     ],
   },
 
   l3: {
-    type: 'text',
+    type: 'listening',
     title: 'Basic Pronunciation',
-    body: `English pronunciation can be tricky because the same letter can make different sounds.
-
-Common patterns:
-- **a** in "cat" vs "cake"
-- **th** in "the" (voiced) vs "think" (unvoiced)
-- Silent letters: the "k" in "know", the "b" in "lamb"
-
-Tip: Listen carefully and repeat. Focus on sounds, not just spelling.`,
+    intro:
+      'Listen carefully. English spelling and sound often differ. Use the player, then answer.',
     exercises: [
       {
-        type: 'true_false',
-        statement: 'The letter "k" is always pronounced in English words.',
-        correct: false,
-        explanation: 'In words like "know" and "knife" the k is silent.',
+        type: 'listen_choose',
+        prompt: 'Which word do you hear?',
+        audioText: 'knife',
+        options: ['night', 'knife', 'life', 'nine'],
+        correctIndex: 1,
+        explanation: 'Knife has a silent k.',
       },
       {
-        type: 'multiple_choice',
-        question: 'Which word has a silent letter?',
-        options: ['cat', 'dog', 'knife', 'pen'],
+        type: 'listen_choose',
+        prompt: 'Which word do you hear?',
+        audioText: 'think',
+        options: ['thing', 'sink', 'think', 'thick'],
         correctIndex: 2,
+      },
+      {
+        type: 'dictation',
+        prompt: 'Type the word you hear.',
+        audioText: 'hello',
+        answer: 'hello',
+      },
+      {
+        type: 'dictation',
+        prompt: 'Type the phrase you hear.',
+        audioText: 'Good morning',
+        answer: 'Good morning',
+        acceptAlternatives: ['good morning'],
       },
     ],
   },
@@ -182,7 +233,7 @@ Tip: Listen carefully and repeat. Focus on sounds, not just spelling.`,
   l4: {
     type: 'vocab',
     title: 'Hello & Goodbye',
-    intro: 'Learn the most common greetings and farewells in English.',
+    intro: 'Learn the most common greetings and farewells. Tap a card, then listen.',
     items: [
       {
         word: 'Hello',
@@ -222,6 +273,20 @@ Tip: Listen carefully and repeat. Focus on sounds, not just spelling.`,
       },
     ],
     exercises: [
+      {
+        type: 'listen_choose',
+        prompt: 'Listen and choose the greeting.',
+        audioText: 'Good morning',
+        options: ['Good night', 'Good morning', 'Goodbye', 'Thank you'],
+        correctIndex: 1,
+      },
+      {
+        type: 'dictation',
+        prompt: 'Type the farewell you hear.',
+        audioText: 'Goodbye',
+        answer: 'Goodbye',
+        acceptAlternatives: ['goodbye', 'good bye'],
+      },
       {
         type: 'multiple_choice',
         question: 'What do you say in the morning?',
@@ -280,6 +345,20 @@ Tip: Listen carefully and repeat. Focus on sounds, not just spelling.`,
     ],
     exercises: [
       {
+        type: 'listen_choose',
+        prompt: 'What question do you hear?',
+        audioText: 'How are you?',
+        options: ['How are you?', 'Where are you from?', 'What is your name?', 'Nice to meet you'],
+        correctIndex: 0,
+      },
+      {
+        type: 'dictation',
+        prompt: 'Type the phrase.',
+        audioText: 'Nice to meet you',
+        answer: 'Nice to meet you',
+        acceptAlternatives: ['nice to meet you'],
+      },
+      {
         type: 'multiple_choice',
         question: 'How do you ask someone their origin?',
         options: ['How are you?', 'Where are you from?', 'Nice to meet you', 'My name is'],
@@ -299,12 +378,10 @@ Tip: Listen carefully and repeat. Focus on sounds, not just spelling.`,
     ],
   },
 
-  // ── Everyday English Vocabulary ────────────────────────────────
-  // (mapped to the second English course lessons)
   'vocab-l1': {
     type: 'vocab',
     title: 'Family Members',
-    intro: 'Essential words for talking about family.',
+    intro: 'Essential words for talking about family. Listen to each word.',
     items: [
       { word: 'mother', translation_am: 'እናት', example: 'My mother is a teacher.', example_am: 'እናቴ መምህር ነች።' },
       { word: 'father', translation_am: 'አባት', example: 'My father works in a bank.', example_am: 'አባቴ በባንክ ይሰራል።' },
@@ -314,6 +391,19 @@ Tip: Listen carefully and repeat. Focus on sounds, not just spelling.`,
       { word: 'family', translation_am: 'ቤተሰብ', example: 'I love my family.', example_am: 'ቤተሰቤን እወዳለሁ።' },
     ],
     exercises: [
+      {
+        type: 'listen_choose',
+        prompt: 'Which family word do you hear?',
+        audioText: 'mother',
+        options: ['father', 'mother', 'brother', 'sister'],
+        correctIndex: 1,
+      },
+      {
+        type: 'dictation',
+        prompt: 'Type the word you hear.',
+        audioText: 'family',
+        answer: 'family',
+      },
       {
         type: 'multiple_choice',
         question: 'What is the English word for "እናት"?',
@@ -347,6 +437,13 @@ Tip: Listen carefully and repeat. Focus on sounds, not just spelling.`,
     ],
     exercises: [
       {
+        type: 'listen_choose',
+        prompt: 'Which adjective do you hear?',
+        audioText: 'friendly',
+        options: ['family', 'friendly', 'finally', 'funny'],
+        correctIndex: 1,
+      },
+      {
         type: 'multiple_choice',
         question: 'Opposite of "tall"?',
         options: ['kind', 'short', 'young', 'friendly'],
@@ -361,7 +458,6 @@ Tip: Listen carefully and repeat. Focus on sounds, not just spelling.`,
   },
 }
 
-/** Map course lesson IDs to content keys when they differ */
 export function getEnglishContent(lessonId: string): LessonContent | null {
   return englishLessonContent[lessonId] || null
 }
