@@ -44,12 +44,13 @@ export const DATA_KEYS = [
   'type_admin_courses',
   'type_admin_audit',
   'type_user_role',
-  'type_auth_user',
+  'mockUser',
 ] as const
 
 export function clearLearningData(): void {
+  const keep = new Set(['mockUser'])
   for (const k of DATA_KEYS) {
-    if (k === 'type_auth_user') continue // keep session unless full reset
+    if (keep.has(k)) continue
     localStorage.removeItem(k)
   }
 }
