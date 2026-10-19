@@ -14,6 +14,8 @@ import {
 import { useState } from 'react'
 import LanguageSwitcher from '../LanguageSwitcher'
 import { isStaff } from '../../lib/admin'
+import { useAuth } from '../../hooks/useAuth'
+import { getSettings } from '../../lib/settings'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, key: 'dashboard' },
@@ -31,6 +33,16 @@ export default function Layout() {
   const { t } = useTranslation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const staff = isStaff()
+  const { user } = useAuth()
+  const settings = getSettings()
+  const avatarLetter = (
+    settings.displayName ||
+    user?.name ||
+    user?.email ||
+    'U'
+  )
+    .charAt(0)
+    .toUpperCase()
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -69,6 +81,7 @@ export default function Layout() {
           <button
             className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Open menu"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -88,8 +101,9 @@ export default function Layout() {
             <Link
               to="/profile"
               className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-medium text-indigo-700"
+              aria-label="Profile"
             >
-              U
+              {avatarLetter}
             </Link>
           </div>
         </header>
@@ -100,7 +114,7 @@ export default function Layout() {
             <div className="absolute left-0 top-0 h-full w-72 bg-white shadow-xl">
               <div className="flex h-16 items-center justify-between border-b px-4">
                 <span className="font-semibold">{t('app.name')}</span>
-                <button onClick={() => setMobileOpen(false)} className="p-2">
+                <button onClick={() => setMobileOpen(false)} className="p-2" aria-label="Close menu">
                   ✕
                 </button>
               </div>
