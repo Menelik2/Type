@@ -10,29 +10,23 @@ cp .env.example .env.local
 npm run dev
 ```
 
-```bash
-npm run test:run && npm run build
-```
-
-## Progress
+## Phases
 
 | Phase | Status |
 |-------|--------|
-| 0–2 Foundation, public pages, dashboard | ✅ |
-| 3 English MVP | ✅ |
-| 4 Amharic Fidel MVP | ✅ |
-| 5 Audio & listening | ✅ |
-| 6 Administration | ✅ |
-| 7 Production readiness | ✅ |
+| 0–7 Foundation → production readiness | ✅ |
 | 8 Shared typing engine | ✅ |
-| 9 Vocabulary hub & progress insights | ✅ |
+| 9 Vocabulary & progress insights | ✅ |
+| 10 Settings & profile | ✅ |
 
-### Phase 9
+### Phase 10
 
-- **`/vocabulary`** — bilingual word bank, search, tags, flip cards, TTS, mark as known
-- **`/progress`** — enrolled courses %, vocab mastery, typing best WPM + recent runs
+- **`/settings`** — interface language, preferred learning language, reduce motion, Amharic keyboard default, clear learning / all data
+- **`/profile`** — display name, role, sign out
+- Header avatar shows your initial
+- Settings apply interface language + `reduce-motion` on save
 
-Still localStorage-backed until Supabase is connected (`docs/DEPLOY.md`).
+Local-first MVP is feature-complete. Next major step: connect Supabase (see `docs/DEPLOY.md`).
 
 ## License
 
