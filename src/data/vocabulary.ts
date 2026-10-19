@@ -1,8 +1,11 @@
 /**
- * Unified vocabulary bank — English & Amharic.
+ * Unified vocabulary bank — English & Amharic (beginner → pro).
  */
 
 import { vocabExtra } from './vocabExtra'
+import { vocabPro } from './vocabPro'
+
+export type VocabLevel = 'beginner' | 'intermediate' | 'advanced'
 
 export type VocabEntry = {
   id: string
@@ -15,8 +18,9 @@ export type VocabEntry = {
   tags: string[]
 }
 
+const LEVELS: VocabLevel[] = ['beginner', 'intermediate', 'advanced']
+
 const coreBank: VocabEntry[] = [
-  // English greetings
   { id: 'en-hello', lang: 'en', term: 'Hello', meaning: 'ሰላም / ሀሎ', example: 'Hello! How are you?', example_am: 'ሰላም! እንደምን አለህ/አለሽ?', tags: ['greetings', 'beginner'] },
   { id: 'en-hi', lang: 'en', term: 'Hi', meaning: 'ሃይ', example: 'Hi, my name is Sara.', tags: ['greetings', 'beginner'] },
   { id: 'en-good-morning', lang: 'en', term: 'Good morning', meaning: 'እንደምን አደርክ/አደርሽ', example: 'Good morning, everyone!', tags: ['greetings', 'beginner'] },
@@ -31,8 +35,6 @@ const coreBank: VocabEntry[] = [
   { id: 'en-no', lang: 'en', term: 'No', meaning: 'አይ', example: 'No, thank you.', tags: ['greetings', 'beginner'] },
   { id: 'en-nice-meet', lang: 'en', term: 'Nice to meet you', meaning: 'ደስ ብሎኛል', example: 'Nice to meet you, Anna.', tags: ['greetings', 'beginner'] },
   { id: 'en-welcome', lang: 'en', term: 'Welcome', meaning: 'እንኳን ደህና መጣህ/መጣሽ', example: 'Welcome to our school!', tags: ['greetings', 'beginner'] },
-
-  // English family
   { id: 'en-mother', lang: 'en', term: 'mother', meaning: 'እናት', example: 'My mother is a teacher.', tags: ['family', 'beginner'] },
   { id: 'en-father', lang: 'en', term: 'father', meaning: 'አባት', example: 'My father works in a bank.', tags: ['family', 'beginner'] },
   { id: 'en-brother', lang: 'en', term: 'brother', meaning: 'ወንድም', example: 'I have one brother.', tags: ['family', 'beginner'] },
@@ -42,8 +44,6 @@ const coreBank: VocabEntry[] = [
   { id: 'en-son', lang: 'en', term: 'son', meaning: 'ወንድ ልጅ', example: 'Their son is five years old.', tags: ['family', 'beginner'] },
   { id: 'en-daughter', lang: 'en', term: 'daughter', meaning: 'ሴት ልጅ', example: 'Her daughter goes to school.', tags: ['family', 'beginner'] },
   { id: 'en-friend', lang: 'en', term: 'friend', meaning: 'ጓደኛ', example: 'He is my best friend.', tags: ['family', 'beginner'] },
-
-  // English adjectives
   { id: 'en-tall', lang: 'en', term: 'tall', meaning: 'ረጅም', example: 'He is tall.', tags: ['adjectives', 'beginner'] },
   { id: 'en-short', lang: 'en', term: 'short', meaning: 'አጭር', example: 'She is short.', tags: ['adjectives', 'beginner'] },
   { id: 'en-friendly', lang: 'en', term: 'friendly', meaning: 'ወዳጅ', example: 'They are very friendly.', tags: ['adjectives', 'beginner'] },
@@ -54,8 +54,6 @@ const coreBank: VocabEntry[] = [
   { id: 'en-small', lang: 'en', term: 'small', meaning: 'ትንሽ', example: 'I have a small bag.', tags: ['adjectives', 'beginner'] },
   { id: 'en-new', lang: 'en', term: 'new', meaning: 'አዲስ', example: 'This is a new book.', tags: ['adjectives', 'beginner'] },
   { id: 'en-old', lang: 'en', term: 'old', meaning: 'አሮጌ / አዛውንት', example: 'The old man smiled.', tags: ['adjectives', 'beginner'] },
-
-  // English school & food
   { id: 'en-school', lang: 'en', term: 'school', meaning: 'ትምህርት ቤት', example: 'I go to school every day.', tags: ['school', 'beginner'] },
   { id: 'en-teacher', lang: 'en', term: 'teacher', meaning: 'መምህር', example: 'Our teacher is kind.', tags: ['school', 'beginner'] },
   { id: 'en-student', lang: 'en', term: 'student', meaning: 'ተማሪ', example: 'She is a good student.', tags: ['school', 'beginner'] },
@@ -72,8 +70,6 @@ const coreBank: VocabEntry[] = [
   { id: 'en-food', lang: 'en', term: 'food', meaning: 'ምግብ', example: 'The food is delicious.', tags: ['food', 'beginner'] },
   { id: 'en-eat', lang: 'en', term: 'eat', meaning: 'መብላት', example: 'We eat lunch at noon.', tags: ['food', 'verbs', 'beginner'] },
   { id: 'en-drink', lang: 'en', term: 'drink', meaning: 'መጠጣት', example: 'Please drink some water.', tags: ['food', 'verbs', 'beginner'] },
-
-  // English numbers colors time
   { id: 'en-one', lang: 'en', term: 'one', meaning: 'አንድ', tags: ['numbers', 'beginner'] },
   { id: 'en-two', lang: 'en', term: 'two', meaning: 'ሁለት', tags: ['numbers', 'beginner'] },
   { id: 'en-three', lang: 'en', term: 'three', meaning: 'ሦስት', tags: ['numbers', 'beginner'] },
@@ -86,8 +82,6 @@ const coreBank: VocabEntry[] = [
   { id: 'en-today', lang: 'en', term: 'today', meaning: 'ዛሬ', tags: ['time', 'beginner'] },
   { id: 'en-tomorrow', lang: 'en', term: 'tomorrow', meaning: 'ነገ', tags: ['time', 'beginner'] },
   { id: 'en-yesterday', lang: 'en', term: 'yesterday', meaning: 'ትናንት', tags: ['time', 'beginner'] },
-
-  // Amharic core
   { id: 'am-selam', lang: 'am', term: 'ሰላም', meaning: 'Hello / Peace', translit: 'sälam', tags: ['greetings', 'beginner'] },
   { id: 'am-thanks', lang: 'am', term: 'አመሰግናለሁ', meaning: 'Thank you', translit: 'amäsägənalähu', tags: ['greetings', 'beginner'] },
   { id: 'am-please', lang: 'am', term: 'እባክህ', meaning: 'Please (to a man)', translit: 'əbakəh', tags: ['greetings', 'beginner'] },
@@ -138,16 +132,24 @@ const coreBank: VocabEntry[] = [
   { id: 'am-you-f', lang: 'am', term: 'አንቺ', meaning: 'You (f)', translit: 'anči', tags: ['everyday', 'beginner'] },
 ]
 
-export const vocabularyBank: VocabEntry[] = [...coreBank, ...vocabExtra]
+export const vocabularyBank: VocabEntry[] = [...coreBank, ...vocabExtra, ...vocabPro]
+
+export function entryLevel(e: VocabEntry): VocabLevel {
+  if (e.tags.includes('advanced')) return 'advanced'
+  if (e.tags.includes('intermediate')) return 'intermediate'
+  return 'beginner'
+}
 
 export function filterVocabulary(opts: {
   lang?: 'en' | 'am' | 'all'
   tag?: string
+  level?: VocabLevel | 'all'
   q?: string
 }): VocabEntry[] {
   const q = opts.q?.trim().toLowerCase() || ''
   return vocabularyBank.filter((e) => {
     if (opts.lang && opts.lang !== 'all' && e.lang !== opts.lang) return false
+    if (opts.level && opts.level !== 'all' && entryLevel(e) !== opts.level) return false
     if (opts.tag && !e.tags.includes(opts.tag)) return false
     if (!q) return true
     return (
@@ -158,6 +160,11 @@ export function filterVocabulary(opts: {
   })
 }
 
+/** Topic tags only (exclude level labels). */
 export function allTags(): string[] {
-  return [...new Set(vocabularyBank.flatMap((e) => e.tags))].sort()
+  return [
+    ...new Set(
+      vocabularyBank.flatMap((e) => e.tags.filter((t) => !LEVELS.includes(t as VocabLevel)))
+    ),
+  ].sort()
 }
