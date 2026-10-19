@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Languages, Eye, EyeOff } from 'lucide-react'
 import LanguageSwitcher from '../../components/LanguageSwitcher'
 import { useAuth } from '../../hooks/useAuth'
+import { saveSettings } from '../../lib/settings'
 
 export default function RegisterPage() {
   const { t } = useTranslation()
@@ -21,13 +22,15 @@ export default function RegisterPage() {
     setError('')
     setLoading(true)
 
-    await new Promise((r) => setTimeout(r, 600))
+    await new Promise((r) => setTimeout(r, 400))
 
-    if (email && password.length >= 6 && name.trim()) {
-      login(email, name)
+    if (email.trim() && password.length >= 6 && name.trim()) {
+      const display = name.trim()
+      saveSettings({ displayName: display })
+      login(email.trim(), display)
       navigate('/dashboard')
     } else {
-      setError(t('auth.invalidCredentials') || 'Please fill all fields correctly')
+      setError('Please enter name, email, and a password of at least 6 characters.')
     }
     setLoading(false)
   }
@@ -48,7 +51,9 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
           <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
             <h1 className="text-2xl font-bold text-gray-900">{t('auth.register')}</h1>
-            <p className="mt-2 text-sm text-gray-600">{t('auth.noAccount')}</p>
+            <p className="mt-2 text-sm text-gray-600">
+              {t('app.tagline')} · mock account (stored in this browser)
+            </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
               {error && (
@@ -104,6 +109,7 @@ export default function RegisterPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
