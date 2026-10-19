@@ -12,6 +12,7 @@ import {
   saveTypingResult,
   type TypingLang,
 } from '../lib/typing'
+import { getSettings } from '../lib/settings'
 import AmharicKeyboard from '../components/keyboard/AmharicKeyboard'
 import { cn } from '../lib/utils'
 
@@ -30,13 +31,28 @@ export default function TypingPage() {
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [endedAt, setEndedAt] = useState<number | null>(null)
   const [liveMs, setLiveMs] = useState(0)
+  const [showKeyboard, setShowKeyboard] = useState(
+    () => getSettings().showAmharicKeyboardDefault
+  )
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [, setTick] = useState(0)
+
+  const reset = useCallback(() => {
+    setInput('')
+    setPhase('idle')
+    setStartedAt(null)
+    setEndedAt(null)
+    setLiveMs(0)
+    inputRef.current?.focus()
+  }, [])
 
   useEffect(() => {
     setPassageId(getPassages(lang)[0]?.id || '')
     reset()
-  }, [lang])
+    if (lang === 'am') {
+      setShowKeyboard(getSettings().showAmharicKeyboardDefault)
+    }
+  }, [lang, reset])
 
   useEffect(() => {
     if (phase !== 'running' || !startedAt) return
@@ -77,15 +93,6 @@ export default function TypingPage() {
 
   const wpm = calcWpm(correct, durationMs || 1)
   const accuracy = calcAccuracy(correct, correct + errors)
-
-  const reset = useCallback(() => {
-    setInput('')
-    setPhase('idle')
-    setStartedAt(null)
-    setEndedAt(null)
-    setLiveMs(0)
-    inputRef.current?.focus()
-  }, [])
 
   const onChange = (value: string) => {
     if (phase === 'done') return
@@ -200,12 +207,23 @@ export default function TypingPage() {
         />
 
         {lang === 'am' && phase !== 'done' && (
-          <div className="mt-4">
-            <AmharicKeyboard
-              onKey={(c) => onChange(input + c)}
-              onBackspace={() => onChange(graphemes(input).slice(0, -1).join(''))}
-              onSpace={() => onChange(input + ' ')}
-            />
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setShowKeyboard((v) => !v)}
+              className="mb-2 text-xs font-medium text-indigo-600 hover:underline"
+            >
+              {showKeyboard ? 'Hide keyboard' : 'Show Amharic keyboard'}
+            </button>
+            {showKeyboard && (
+              <AmharicKeyboard
+                onKey={(c) => onChange(input + c)}
+                onBackspace={() =>
+                  onChange(graphemes(input).slice(0, -1).join(''))
+                }
+                onSpace={() => onChange(input + ' ')}
+              />
+            )}
           </div>
         )}
 
