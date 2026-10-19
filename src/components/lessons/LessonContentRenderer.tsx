@@ -24,9 +24,11 @@ export default function LessonContentRenderer({ content }: Props) {
 
       {content.type === 'text' && (
         <div className="space-y-4">
-          {content.audioText && (
-            <AudioPlayer ttsText={content.audioText} ttsLang="en-US" label="Listen to this lesson" />
-          )}
+          <AudioPlayer
+            ttsText={content.audioText || content.body.slice(0, 400)}
+            ttsLang="en-US"
+            label="Listen to this lesson"
+          />
           <div className="prose prose-indigo max-w-none">
             {content.body.split('\n\n').map((para, i) => (
               <p key={i} className="mb-4 whitespace-pre-line text-gray-700 leading-relaxed">
@@ -43,7 +45,14 @@ export default function LessonContentRenderer({ content }: Props) {
         <div className="space-y-6">
           {content.rules.map((rule, i) => (
             <div key={i} className="rounded-xl border border-gray-100 bg-white p-5">
-              <h3 className="font-semibold text-gray-900">{rule.title}</h3>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <h3 className="font-semibold text-gray-900">{rule.title}</h3>
+                <AudioPlayer
+                  ttsText={`${rule.title}. ${rule.body}. ${rule.examples.join('. ')}`}
+                  ttsLang="en-US"
+                  className="border-0 p-0 shadow-none"
+                />
+              </div>
               <p className="mt-2 text-gray-700">{rule.body}</p>
               {rule.examples.length > 0 && (
                 <ul className="mt-3 space-y-1 border-l-2 border-indigo-200 pl-4">
@@ -61,6 +70,11 @@ export default function LessonContentRenderer({ content }: Props) {
 
       {content.type === 'reading' && (
         <div className="space-y-6">
+          <AudioPlayer
+            ttsText={content.passage}
+            ttsLang="en-US"
+            label="Listen to the passage"
+          />
           <div className="rounded-xl border border-gray-100 bg-white p-6 leading-relaxed text-gray-800">
             {content.passage.split('\n\n').map((p, i) => (
               <p key={i} className="mb-4 last:mb-0">
