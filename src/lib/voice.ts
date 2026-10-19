@@ -2,6 +2,10 @@
  * Browser TTS — English + Amharic.
  * Priority: native SpeechSynthesis (same user-gesture stack) → multi-source audio fallbacks.
  * Avoid awaiting before synth.speak() — Chrome requires user activation.
+ *
+ * Amharic: very few devices ship an am-ET voice. Online Google Translate TTS is used as
+ * the free fallback (short chunks). For production quality, later add recorded audio or
+ * a dedicated Amharic TTS provider (e.g. Addis AI).
  */
 
 export type VoiceLang = 'en' | 'am'
@@ -131,7 +135,7 @@ export function pickVoice(
     prefix === 'am'
       ? list.find(
           (v) =>
-            /amharic|ethiopic|አማርኛ/i.test(v.name) ||
+            /amharic|ethiopic|አማርኛ|am-et|am_et/i.test(v.name + ' ' + v.lang) ||
             v.lang.toLowerCase().startsWith('am')
         )
       : null
@@ -160,13 +164,21 @@ function toTl(lang: VoiceLang | string): string {
   return lang === 'am' ? 'am' : 'en'
 }
 
+function isAmharicLang(lang: VoiceLang | string): boolean {
+  if (lang === 'am') return true
+  if (typeof lang === 'string') return lang.toLowerCase().startsWith('am')
+  return false
+}
+
+/** Split text for TTS. Amharic needs shorter chunks — Google TTS is flaky on long Ethiopic. */
 function chunkText(text: string, maxLen = 140): string[] {
   const cleaned = text.replace(/\s+/g, ' ').trim()
   if (!cleaned) return []
   if (cleaned.length <= maxLen) return [cleaned]
 
   const parts: string[] = []
-  const sentences = cleaned.split(/(?<=[.!?።፧,،])\s+/)
+  // Amharic sentence ends: ። ፧ ! ? and common Latin punctuation
+  const sentences = cleaned.split(/(?<=[.!?።፧፡,،])\s+/)
   let buf = ''
   for (const s of sentences) {
     if ((buf + ' ' + s).trim().length <= maxLen) {
@@ -176,6 +188,7 @@ function chunkText(text: string, maxLen = 140): string[] {
       if (s.length <= maxLen) {
         buf = s
       } else {
+        // Hard split long runs (rare for Amharic words, but safe)
         for (let i = 0; i < s.length; i += maxLen) parts.push(s.slice(i, i + maxLen))
         buf = ''
       }
@@ -185,20 +198,21 @@ function chunkText(text: string, maxLen = 140): string[] {
   return parts.filter(Boolean)
 }
 
-/** Candidate audio TTS URLs (tried in order). */
+/** Candidate audio TTS URLs (tried in order). Amharic = tl=am. */
 function buildAudioUrls(text: string, lang: VoiceLang | string): string[] {
   const tl = toTl(lang)
   const q = encodeURIComponent(text)
+  // Multiple clients / hosts — unofficial Google Translate TTS; order by historical reliability
   return [
-    // Google unofficial clients (browser Audio element can play without CORS read)
     `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${tl}&q=${q}`,
     `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${tl}&q=${q}`,
-    // Secondary: gstatic mirror pattern used by some clients
     `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=${tl}&q=${q}`,
+    `https://translate.google.com/translate_tts?ie=UTF-8&client=t&tl=${tl}&q=${q}`,
+    `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${tl}&q=${q}`,
   ]
 }
 
-function playAudioUrl(url: string, token: number): Promise<boolean> {
+function playAudioUrl(url: string, token: number, timeoutMs = 12000): Promise<boolean> {
   return new Promise((resolve) => {
     if (token !== speakToken) {
       resolve(false)
@@ -217,10 +231,8 @@ function playAudioUrl(url: string, token: number): Promise<boolean> {
 
     audio.preload = 'auto'
     // Do NOT set crossOrigin — that forces CORS and breaks translate_tts
-    audio.onended = () => done(true)
-    audio.onerror = () => done(false)
 
-    const timeout = window.setTimeout(() => done(false), 12000)
+    const timeout = window.setTimeout(() => done(false), timeoutMs)
 
     audio.onended = () => {
       clearTimeout(timeout)
@@ -249,15 +261,16 @@ function playAudioUrl(url: string, token: number): Promise<boolean> {
 
 async function playFirstWorkingUrl(
   urls: string[],
-  token: number
+  token: number,
+  timeoutMs = 12000
 ): Promise<boolean> {
   for (const url of urls) {
     if (token !== speakToken) return false
     haltMedia()
     // tiny yield so previous audio fully releases
-    await new Promise((r) => setTimeout(r, 30))
+    await new Promise((r) => setTimeout(r, 40))
     if (token !== speakToken) return false
-    const ok = await playAudioUrl(url, token)
+    const ok = await playAudioUrl(url, token, timeoutMs)
     if (ok) return true
   }
   return false
@@ -269,8 +282,12 @@ async function speakViaAudio(
   token: number,
   onStart?: () => void
 ): Promise<boolean> {
-  const chunks = chunkText(text)
+  const isAm = isAmharicLang(lang)
+  // Amharic: keep chunks short so Google TTS is less likely to reject / timeout
+  const maxLen = isAm ? 90 : 140
+  const chunks = chunkText(text, maxLen)
   if (!chunks.length) return false
+  const timeoutMs = isAm ? 16000 : 12000
   let started = false
   for (const chunk of chunks) {
     if (token !== speakToken) return false
@@ -279,7 +296,7 @@ async function speakViaAudio(
       onStart?.()
     }
     const urls = buildAudioUrls(chunk, lang)
-    const ok = await playFirstWorkingUrl(urls, token)
+    const ok = await playFirstWorkingUrl(urls, token, timeoutMs)
     if (!ok) return false
   }
   return token === speakToken
@@ -314,9 +331,7 @@ export async function speak(text: string, opts: SpeakOptions = {}): Promise<bool
   haltMedia()
 
   const langOpt = opts.lang || 'en'
-  const isAm =
-    langOpt === 'am' ||
-    (typeof langOpt === 'string' && langOpt.toLowerCase().startsWith('am'))
+  const isAm = isAmharicLang(langOpt)
 
   refreshVoiceCache()
   if (isTtsAvailable() && cachedVoices.length === 0) {
@@ -447,7 +462,7 @@ export async function speak(text: string, opts: SpeakOptions = {}): Promise<bool
 
   opts.onError?.(
     isAm
-      ? 'Amharic speech failed. Install an Amharic system voice, or check network (online audio).'
+      ? 'Amharic speech failed. Install an Amharic system voice, or check network (online audio). · የአማርኛ ድምፅ አልተሳካም። የአማርኛ ድምፅ ይጫኑ ወይም ኢንተርኔት ይፈትሹ።'
       : 'Speech failed. Use Chrome or Edge, unmute the tab, and try again.'
   )
   return false
