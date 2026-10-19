@@ -27,6 +27,14 @@ const ROLE_KEY = 'type_user_role'
 const COURSES_KEY = 'type_admin_courses'
 const AUDIT_KEY = 'type_admin_audit'
 
+function notifyRoleChange() {
+  try {
+    window.dispatchEvent(new Event('storage'))
+  } catch {
+    /* ignore */
+  }
+}
+
 export function getRole(): UserRole {
   try {
     const r = localStorage.getItem(ROLE_KEY) as UserRole | null
@@ -40,6 +48,7 @@ export function getRole(): UserRole {
 export function setRole(role: UserRole) {
   localStorage.setItem(ROLE_KEY, role)
   logAudit('role_change', `Role set to ${role}`, 'system')
+  notifyRoleChange()
 }
 
 export function isStaff(): boolean {
