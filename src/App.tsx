@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useEffect } from 'react'
 import LandingPage from './pages/LandingPage'
@@ -37,6 +37,8 @@ function App() {
     }
     if (s.reduceMotion) {
       document.documentElement.classList.add('reduce-motion')
+    } else {
+      document.documentElement.classList.remove('reduce-motion')
     }
   }, [i18n])
 
@@ -45,15 +47,20 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      {/* Avoid dead link from login */}
+      <Route path="/forgot-password" element={<Navigate to="/login" replace />} />
 
       <Route element={<Layout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/my-courses" element={<DashboardPage />} />
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/courses/:slug" element={<CourseDetailsPage />} />
+
+        {/* Static learn filters MUST be before /learn/:slug */}
+        <Route path="/learn/english" element={<Navigate to="/courses?lang=en" replace />} />
+        <Route path="/learn/amharic" element={<Navigate to="/courses?lang=am" replace />} />
         <Route path="/learn/:slug" element={<CoursePlayerPage />} />
-        <Route path="/learn/english" element={<CoursesPage />} />
-        <Route path="/learn/amharic" element={<CoursesPage />} />
+
         <Route path="/vocabulary" element={<VocabularyPage />} />
         <Route path="/typing" element={<TypingPage />} />
         <Route path="/practice/audio" element={<ListenTypePage />} />
@@ -70,6 +77,8 @@ function App() {
           <Route path="translations" element={<AdminTranslations />} />
         </Route>
       </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
