@@ -8,6 +8,7 @@ import RegisterPage from './pages/auth/RegisterPage'
 import CoursesPage from './pages/CoursesPage'
 import CourseDetailsPage from './pages/CourseDetailsPage'
 import DashboardPage from './pages/DashboardPage'
+import CoursePlayerPage from './pages/CoursePlayerPage'
 
 function App() {
   const { i18n } = useTranslation()
@@ -31,15 +32,16 @@ function App() {
         <Route path="/my-courses" element={<DashboardPage />} />
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/courses/:slug" element={<CourseDetailsPage />} />
-        {/* Placeholders for later phases */}
+        <Route path="/learn/:slug" element={<CoursePlayerPage />} />
+        {/* Shortcuts */}
         <Route path="/learn/english" element={<CoursesPage />} />
         <Route path="/learn/amharic" element={<CoursesPage />} />
+        {/* Placeholders for later phases */}
         <Route path="/vocabulary" element={<ComingSoon title="Vocabulary" />} />
         <Route path="/typing" element={<ComingSoon title="Typing Practice" />} />
         <Route path="/progress" element={<ComingSoon title="Progress" />} />
         <Route path="/settings" element={<ComingSoon title="Settings" />} />
         <Route path="/profile" element={<ComingSoon title="Profile" />} />
-        <Route path="/learn/:slug" element={<ComingSoon title="Course Player" />} />
       </Route>
     </Routes>
   )
