@@ -33,7 +33,9 @@ export default function ListenTypePage() {
     [lang, level]
   )
 
-  const item: ListenItem | undefined = items[index] || items[0]
+  // Keep index in range when filter changes
+  const safeIndex = items.length === 0 ? 0 : Math.min(index, items.length - 1)
+  const item: ListenItem | undefined = items[safeIndex]
 
   useEffect(() => {
     setIndex(0)
@@ -42,6 +44,13 @@ export default function ListenTypePage() {
     setOk(false)
     stopSpeaking()
   }, [lang, level])
+
+  useEffect(() => {
+    stopSpeaking()
+    setTyped('')
+    setChecked(false)
+    setOk(false)
+  }, [safeIndex])
 
   useEffect(() => {
     return () => stopSpeaking()
@@ -57,8 +66,7 @@ export default function ListenTypePage() {
 
   const check = () => {
     if (!item || !typed.trim()) return
-    const match =
-      normalize(typed, lang) === normalize(item.text, lang)
+    const match = normalize(typed, lang) === normalize(item.text, lang)
     setOk(match)
     setChecked(true)
     setStreak((s) => (match ? s + 1 : 0))
@@ -66,7 +74,10 @@ export default function ListenTypePage() {
 
   const replay = () => {
     if (!item) return
-    speak(item.text, { lang, rate: level === 'hard' ? 1 : level === 'medium' ? 0.95 : 0.85 })
+    void speak(item.text, {
+      lang,
+      rate: level === 'hard' ? 1 : level === 'medium' ? 0.95 : 0.85,
+    })
   }
 
   if (items.length === 0) {
@@ -90,7 +101,6 @@ export default function ListenTypePage() {
         </p>
       </div>
 
-      {/* Controls */}
       <div className="mb-6 flex flex-wrap gap-2">
         {(['en', 'am'] as VoiceLang[]).map((l) => (
           <button
@@ -140,7 +150,7 @@ export default function ListenTypePage() {
 
       <div className="mb-3 flex justify-between text-xs text-gray-500">
         <span>
-          {index + 1} / {items.length}
+          {safeIndex + 1} / {items.length}
         </span>
         <span>Streak: {streak}</span>
       </div>
@@ -152,6 +162,7 @@ export default function ListenTypePage() {
 
         {item && (
           <AudioPlayer
+            key={item.id}
             ttsText={item.text}
             ttsLang={lang === 'am' ? 'am-ET' : 'en-US'}
             label="Audio"
@@ -262,8 +273,8 @@ export default function ListenTypePage() {
       </div>
 
       <p className="mt-6 text-center text-xs text-gray-400">
-        Voice uses your browser’s speech engine. For best English quality use Chrome or Edge.
-        Amharic requires an installed አማርኛ voice on the device (or later, uploaded audio files).
+        English uses browser TTS. Amharic uses a system voice if installed, otherwise online audio
+        (needs network).
       </p>
     </div>
   )
