@@ -14,6 +14,7 @@ import VocabularyPage from './pages/VocabularyPage'
 import ProgressPage from './pages/ProgressPage'
 import SettingsPage from './pages/SettingsPage'
 import ProfilePage from './pages/ProfilePage'
+import ListenTypePage from './pages/ListenTypePage'
 import RequireStaff from './components/admin/RequireStaff'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminCourses from './pages/admin/AdminCourses'
@@ -55,6 +56,8 @@ function App() {
         <Route path="/learn/amharic" element={<CoursesPage />} />
         <Route path="/vocabulary" element={<VocabularyPage />} />
         <Route path="/typing" element={<TypingPage />} />
+        <Route path="/practice/audio" element={<ListenTypePage />} />
+        <Route path="/practice" element={<ListenTypePage />} />
         <Route path="/progress" element={<ProgressPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
