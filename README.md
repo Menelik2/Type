@@ -18,7 +18,7 @@ Professional full-stack language learning platform for English and Amharic (አ�
 - **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS + Lucide
 - **Routing & Data**: React Router + TanStack Query
 - **i18n**: i18next + react-i18next
-- **Backend**: Supabase (Auth, PostgreSQL, Storage, Edge Functions) — wired later
+- **Backend**: Supabase (Auth, PostgreSQL, Storage) — ready to connect
 - **Testing**: Vitest + React Testing Library + Playwright
 - **Deploy**: Vercel + GitHub
 
@@ -29,7 +29,7 @@ git clone https://github.com/Menelik2/Type.git
 cd Type
 npm install
 cp .env.example .env.local
-# Supabase keys optional for Phase 1 (mock auth works without them)
+# Supabase keys optional for now (mock auth + local progress work without them)
 npm run dev
 ```
 
@@ -46,18 +46,24 @@ Open http://localhost:5173
 
 ### ✅ Phase 1 — Public pages & localization
 - Landing page (bilingual)
-- Login & Register (mock auth via localStorage)
-- Course catalog with search + language + difficulty filters
-- Course details page with objectives & outline
-- My Courses / Dashboard with progress cards
-- Sample bilingual course data (English + Amharic)
+- Login & Register (mock auth)
+- Course catalog with search + filters
+- Course details page
+- Sample bilingual course data
 
-### 🔜 Next (Phase 2+)
-- Real Supabase Auth + profiles
-- Course player & lesson completion
-- Persistent progress
-- English & Amharic learning modules
+### ✅ Phase 2 — Student dashboard & progress
+- Local progress & enrollment store (`src/lib/progress.ts`)
+- Course Player with sidebar, lesson navigation, complete button
+- Auto-enroll on first open + resume last lesson
+- Dashboard shows real enrolled courses & progress percentages
+- Start / Continue Learning buttons reflect actual state
+- Progress persists in localStorage (ready to swap to Supabase)
+
+### 🔜 Next (Phase 3+)
+- English MVP learning modules
+- Amharic Fidel interactive lessons
 - Typing engine
+- Real Supabase Auth + database
 
 ## License
 
