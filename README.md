@@ -6,13 +6,12 @@
 git clone https://github.com/Menelik2/Type.git
 cd Type
 npm install
-cp .env.example .env.local   # optional until Supabase is connected
+cp .env.example .env.local
 npm run dev
 ```
 
 ```bash
-npm run test:run
-npm run build
+npm run test:run && npm run build
 ```
 
 ## Progress
@@ -26,22 +25,14 @@ npm run build
 | 6 Administration | ✅ |
 | 7 Production readiness | ✅ |
 | 8 Shared typing engine | ✅ |
+| 9 Vocabulary hub & progress insights | ✅ |
 
-### Phase 8 — Typing
+### Phase 9
 
-- **Unicode-safe** engine (grapheme-aware for Ethiopic)
-- Live **WPM** + **accuracy**
-- English & Amharic passages (beginner → intermediate)
-- **Virtual Amharic keyboard** on Amharic mode
-- Results saved locally (last 50) + best WPM per language
-- Route: `/typing`
+- **`/vocabulary`** — bilingual word bank, search, tags, flip cards, TTS, mark as known
+- **`/progress`** — enrolled courses %, vocab mastery, typing best WPM + recent runs
 
-Auth/progress still mock until Supabase keys are connected. Schema is ready in `supabase/migrations/`.
-
-## Docs
-
-- [docs/DEPLOY.md](docs/DEPLOY.md)
-- [docs/SECURITY.md](docs/SECURITY.md)
+Still localStorage-backed until Supabase is connected (`docs/DEPLOY.md`).
 
 ## License
 
