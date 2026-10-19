@@ -29,6 +29,7 @@ export default function AudioPlayer({
   const playingRef = useRef(false)
 
   const useTts = !src && !!ttsText?.trim()
+  const isAmharic = (ttsLang || '').toLowerCase().startsWith('am')
 
   const setPlayingSafe = (v: boolean) => {
     playingRef.current = v
@@ -36,7 +37,7 @@ export default function AudioPlayer({
   }
 
   useEffect(() => {
-    setTtsOk(isTtsAvailable())
+    setTtsOk(isTtsAvailable() || true) // Translate fallback always available online
     void loadVoices()
   }, [])
 
@@ -69,14 +70,12 @@ export default function AudioPlayer({
       el.removeEventListener('loadedmetadata', onTime)
       audioRef.current = null
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- rate applied in separate effect
   }, [src])
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = rate
   }, [rate])
 
-  // Only stop if this instance was actively playing (avoids React StrictMode killing TTS)
   useEffect(() => {
     return () => {
       playIdRef.current += 1
@@ -90,10 +89,6 @@ export default function AudioPlayer({
   const playTts = async () => {
     if (!ttsText?.trim()) {
       setError('No text to speak.')
-      return
-    }
-    if (!isTtsAvailable()) {
-      setError('Speech is not supported here. Open in Chrome or Edge on desktop.')
       return
     }
 
@@ -215,29 +210,33 @@ export default function AudioPlayer({
                 <span>
                   {useTts
                     ? playing
-                      ? 'Speaking…'
+                      ? isAmharic
+                        ? 'Speaking አማርኛ…'
+                        : 'Speaking…'
                       : ttsOk
                         ? 'Tap play'
                         : 'TTS unavailable'
                     : formatTime(progress) + ' / ' + formatTime(duration)}
                 </span>
-                <div className="flex items-center gap-1">
-                  {[0.75, 1, 1.25].map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setRate(r)}
-                      className={cn(
-                        'rounded px-1.5 py-0.5 font-medium transition',
-                        rate === r
-                          ? 'bg-indigo-100 text-indigo-700'
-                          : 'text-gray-400 hover:text-gray-700'
-                      )}
-                    >
-                      {r}x
-                    </button>
-                  ))}
-                </div>
+                {!isAmharic && (
+                  <div className="flex items-center gap-1">
+                    {[0.75, 1, 1.25].map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setRate(r)}
+                        className={cn(
+                          'rounded px-1.5 py-0.5 font-medium transition',
+                          rate === r
+                            ? 'bg-indigo-100 text-indigo-700'
+                            : 'text-gray-400 hover:text-gray-700'
+                        )}
+                      >
+                        {r}x
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -253,7 +252,9 @@ export default function AudioPlayer({
 
           {useTts && (
             <p className="mt-2 text-xs text-gray-400">
-              Browser voice · unmute device · Chrome/Edge recommended
+              {isAmharic
+                ? 'አማርኛ · uses device voice if installed, otherwise online Amharic audio'
+                : 'Browser voice · unmute device · Chrome/Edge recommended'}
             </p>
           )}
         </>
