@@ -1,6 +1,7 @@
 /**
- * Browser voice helper with Amharic support.
- * Native SpeechSynthesis when available; Translate TTS audio fallback otherwise.
+ * Browser TTS — English + Amharic.
+ * Priority: native SpeechSynthesis (same user-gesture stack) → multi-source audio fallbacks.
+ * Avoid awaiting before synth.speak() — Chrome requires user activation.
  */
 
 export type VoiceLang = 'en' | 'am'
@@ -10,52 +11,74 @@ const LANG_TAG: Record<VoiceLang, string> = {
   am: 'am-ET',
 }
 
-let voicesReady: Promise<SpeechSynthesisVoice[]> | null = null
+let cachedVoices: SpeechSynthesisVoice[] = []
+let voicesHooked = false
 let speakToken = 0
 let currentAudio: HTMLAudioElement | null = null
 
 export function isTtsAvailable(): boolean {
-  return typeof window !== 'undefined' && typeof window.speechSynthesis !== 'undefined'
+  return typeof window !== 'undefined' && 'speechSynthesis' in window
+}
+
+function refreshVoiceCache() {
+  if (!isTtsAvailable()) return
+  try {
+    const list = window.speechSynthesis.getVoices()
+    if (list.length) cachedVoices = list
+  } catch {
+    /* ignore */
+  }
 }
 
 export function loadVoices(): Promise<SpeechSynthesisVoice[]> {
   if (!isTtsAvailable()) return Promise.resolve([])
+  refreshVoiceCache()
+  if (cachedVoices.length > 0) return Promise.resolve(cachedVoices)
 
-  if (!voicesReady) {
-    voicesReady = new Promise((resolve) => {
-      const synth = window.speechSynthesis
-      const done = () => resolve(synth.getVoices())
-
-      const existing = synth.getVoices()
-      if (existing.length > 0) {
-        resolve(existing)
-        return
-      }
-
-      const onVoices = () => {
-        synth.removeEventListener('voiceschanged', onVoices)
-        done()
-      }
-      synth.addEventListener('voiceschanged', onVoices)
-      window.setTimeout(() => {
-        synth.removeEventListener('voiceschanged', onVoices)
-        done()
-      }, 600)
-    })
-  }
-  return voicesReady
+  return new Promise((resolve) => {
+    const synth = window.speechSynthesis
+    const finish = () => {
+      refreshVoiceCache()
+      resolve(cachedVoices)
+    }
+    if (!voicesHooked) {
+      voicesHooked = true
+      synth.addEventListener('voiceschanged', () => refreshVoiceCache())
+    }
+    const onVoices = () => {
+      synth.removeEventListener('voiceschanged', onVoices)
+      finish()
+    }
+    synth.addEventListener('voiceschanged', onVoices)
+    // Kick Chrome to populate voices
+    try {
+      synth.getVoices()
+    } catch {
+      /* ignore */
+    }
+    window.setTimeout(finish, 400)
+  })
 }
 
 export function warmUpVoices() {
+  if (!isTtsAvailable()) return
+  refreshVoiceCache()
   void loadVoices()
+  // Chrome: empty utterance unlocks the engine after a user gesture
+  try {
+    const u = new SpeechSynthesisUtterance('')
+    u.volume = 0
+    window.speechSynthesis.speak(u)
+    window.speechSynthesis.cancel()
+  } catch {
+    /* ignore */
+  }
 }
 
-/** Stop audio/TTS without invalidating an in-flight speak token. */
 function haltMedia() {
   if (isTtsAvailable()) {
     try {
       window.speechSynthesis.cancel()
-      if (window.speechSynthesis.paused) window.speechSynthesis.resume()
     } catch {
       /* ignore */
     }
@@ -64,6 +87,7 @@ function haltMedia() {
     try {
       currentAudio.onended = null
       currentAudio.onerror = null
+      currentAudio.oncanplaythrough = null
       currentAudio.pause()
       currentAudio.removeAttribute('src')
       currentAudio.load()
@@ -74,7 +98,6 @@ function haltMedia() {
   }
 }
 
-/** Public stop: cancels playback and invalidates pending speak() calls. */
 export function stopSpeaking() {
   speakToken += 1
   haltMedia()
@@ -84,8 +107,15 @@ export function pickVoice(
   lang: VoiceLang | string,
   voices?: SpeechSynthesisVoice[]
 ): SpeechSynthesisVoice | null {
-  const list = voices ?? (isTtsAvailable() ? window.speechSynthesis.getVoices() : [])
-  if (list.length === 0) return null
+  const list =
+    voices && voices.length
+      ? voices
+      : cachedVoices.length
+        ? cachedVoices
+        : isTtsAvailable()
+          ? window.speechSynthesis.getVoices()
+          : []
+  if (!list.length) return null
 
   const tag =
     typeof lang === 'string' && lang.includes('-')
@@ -93,20 +123,34 @@ export function pickVoice(
       : (LANG_TAG[(lang as VoiceLang) || 'en'] || 'en-US').toLowerCase()
   const prefix = tag.split('-')[0]
 
-  return (
-    list.find((v) => v.lang.toLowerCase() === tag) ||
-    list.find((v) => v.lang.toLowerCase().startsWith(prefix + '-')) ||
-    list.find((v) => v.lang.toLowerCase().startsWith(prefix)) ||
-    null
-  )
+  const byExact = list.find((v) => v.lang.toLowerCase() === tag)
+  if (byExact) return byExact
+  const byPrefix = list.find((v) => v.lang.toLowerCase().startsWith(prefix + '-'))
+  if (byPrefix) return byPrefix
+  const byName =
+    prefix === 'am'
+      ? list.find(
+          (v) =>
+            /amharic|ethiopic|አማርኛ/i.test(v.name) ||
+            v.lang.toLowerCase().startsWith('am')
+        )
+      : null
+  if (byName) return byName
+  // English fallback: prefer local high-quality
+  if (prefix === 'en') {
+    return (
+      list.find((v) => /en-US/i.test(v.lang) && v.localService) ||
+      list.find((v) => /^en/i.test(v.lang) && v.localService) ||
+      list.find((v) => /^en/i.test(v.lang)) ||
+      null
+    )
+  }
+  return null
 }
 
 export async function hasAmharicVoice(): Promise<boolean> {
   const voices = await loadVoices()
-  return voices.some((v) => {
-    const l = v.lang.toLowerCase()
-    return l.startsWith('am') || l.includes('ethiopic') || /amharic/i.test(v.name)
-  })
+  return !!pickVoice('am', voices)
 }
 
 function toTl(lang: VoiceLang | string): string {
@@ -116,12 +160,13 @@ function toTl(lang: VoiceLang | string): string {
   return lang === 'am' ? 'am' : 'en'
 }
 
-function chunkText(text: string, maxLen = 160): string[] {
+function chunkText(text: string, maxLen = 140): string[] {
   const cleaned = text.replace(/\s+/g, ' ').trim()
+  if (!cleaned) return []
   if (cleaned.length <= maxLen) return [cleaned]
 
   const parts: string[] = []
-  const sentences = cleaned.split(/(?<=[.!?።፧])\s+/)
+  const sentences = cleaned.split(/(?<=[.!?።፧,،])\s+/)
   let buf = ''
   for (const s of sentences) {
     if ((buf + ' ' + s).trim().length <= maxLen) {
@@ -131,9 +176,7 @@ function chunkText(text: string, maxLen = 160): string[] {
       if (s.length <= maxLen) {
         buf = s
       } else {
-        for (let i = 0; i < s.length; i += maxLen) {
-          parts.push(s.slice(i, i + maxLen))
-        }
+        for (let i = 0; i < s.length; i += maxLen) parts.push(s.slice(i, i + maxLen))
         buf = ''
       }
     }
@@ -142,10 +185,17 @@ function chunkText(text: string, maxLen = 160): string[] {
   return parts.filter(Boolean)
 }
 
-export function translateTtsUrl(text: string, lang: VoiceLang | string): string {
+/** Candidate audio TTS URLs (tried in order). */
+function buildAudioUrls(text: string, lang: VoiceLang | string): string[] {
   const tl = toTl(lang)
   const q = encodeURIComponent(text)
-  return `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${tl}&q=${q}`
+  return [
+    // Google unofficial clients (browser Audio element can play without CORS read)
+    `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${tl}&q=${q}`,
+    `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${tl}&q=${q}`,
+    // Secondary: gstatic mirror pattern used by some clients
+    `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=${tl}&q=${q}`,
+  ]
 }
 
 function playAudioUrl(url: string, token: number): Promise<boolean> {
@@ -156,55 +206,87 @@ function playAudioUrl(url: string, token: number): Promise<boolean> {
     }
     const audio = new Audio()
     currentAudio = audio
-    audio.preload = 'auto'
+    let settled = false
 
-    const cleanup = () => {
+    const done = (ok: boolean) => {
+      if (settled) return
+      settled = true
       if (currentAudio === audio) currentAudio = null
+      resolve(ok && token === speakToken)
     }
+
+    audio.preload = 'auto'
+    // Do NOT set crossOrigin — that forces CORS and breaks translate_tts
+    audio.onended = () => done(true)
+    audio.onerror = () => done(false)
+
+    const timeout = window.setTimeout(() => done(false), 12000)
 
     audio.onended = () => {
-      cleanup()
-      resolve(token === speakToken)
+      clearTimeout(timeout)
+      done(true)
     }
     audio.onerror = () => {
-      cleanup()
-      resolve(false)
+      clearTimeout(timeout)
+      done(false)
     }
 
-    audio.src = url
-    const p = audio.play()
-    if (p && typeof p.then === 'function') {
-      p.catch(() => {
-        cleanup()
-        resolve(false)
-      })
+    try {
+      audio.src = url
+      const p = audio.play()
+      if (p && typeof p.then === 'function') {
+        p.catch(() => {
+          clearTimeout(timeout)
+          done(false)
+        })
+      }
+    } catch {
+      clearTimeout(timeout)
+      done(false)
     }
   })
 }
 
-async function speakViaTranslate(
+async function playFirstWorkingUrl(
+  urls: string[],
+  token: number
+): Promise<boolean> {
+  for (const url of urls) {
+    if (token !== speakToken) return false
+    haltMedia()
+    // tiny yield so previous audio fully releases
+    await new Promise((r) => setTimeout(r, 30))
+    if (token !== speakToken) return false
+    const ok = await playAudioUrl(url, token)
+    if (ok) return true
+  }
+  return false
+}
+
+async function speakViaAudio(
   text: string,
   lang: VoiceLang | string,
   token: number,
   onStart?: () => void
 ): Promise<boolean> {
   const chunks = chunkText(text)
+  if (!chunks.length) return false
   let started = false
   for (const chunk of chunks) {
     if (token !== speakToken) return false
-    const url = translateTtsUrl(chunk, lang)
     if (!started) {
       started = true
       onStart?.()
     }
-    const ok = await playAudioUrl(url, token)
+    const urls = buildAudioUrls(chunk, lang)
+    const ok = await playFirstWorkingUrl(urls, token)
     if (!ok) return false
   }
   return token === speakToken
 }
 
 function normalizeRate(rate: number) {
-  return Math.min(2, Math.max(0.5, rate))
+  return Math.min(1.8, Math.max(0.6, rate))
 }
 
 export type SpeakOptions = {
@@ -216,6 +298,10 @@ export type SpeakOptions = {
   onError?: (msg: string) => void
 }
 
+/**
+ * Speak text. Call from a click/tap handler when possible.
+ * Native TTS runs synchronously after cancel so Chrome keeps user activation.
+ */
 export async function speak(text: string, opts: SpeakOptions = {}): Promise<boolean> {
   const trimmed = text?.trim()
   if (!trimmed) {
@@ -223,85 +309,93 @@ export async function speak(text: string, opts: SpeakOptions = {}): Promise<bool
     return false
   }
 
-  // Invalidate previous speaks, then start a new token
-  speakToken += 1
-  haltMedia()
+  // New generation — invalidate in-flight work once
   const token = ++speakToken
-
-  // Brief pause so Chrome accepts the next utterance after cancel
-  await new Promise((r) => setTimeout(r, 80))
-  if (token !== speakToken) return false
+  haltMedia()
 
   const langOpt = opts.lang || 'en'
   const isAm =
-    (typeof langOpt === 'string' && langOpt.toLowerCase().startsWith('am')) ||
-    langOpt === 'am'
+    langOpt === 'am' ||
+    (typeof langOpt === 'string' && langOpt.toLowerCase().startsWith('am'))
 
-  const voices = await loadVoices()
-  if (token !== speakToken) return false
+  refreshVoiceCache()
+  if (isTtsAvailable() && cachedVoices.length === 0) {
+    try {
+      cachedVoices = window.speechSynthesis.getVoices()
+    } catch {
+      /* ignore */
+    }
+  }
 
-  const nativeVoice = pickVoice(langOpt, voices)
-  const useNative =
+  const nativeVoice = pickVoice(langOpt, cachedVoices)
+  // Amharic: only use native if we truly have an am voice
+  // English: use any en voice, or default system voice
+  const canNative =
     !opts.forceTranslate &&
     isTtsAvailable() &&
-    !!nativeVoice &&
-    (!isAm || nativeVoice.lang.toLowerCase().startsWith('am'))
+    (isAm
+      ? !!nativeVoice && nativeVoice.lang.toLowerCase().startsWith('am')
+      : true)
 
-  if (useNative && nativeVoice) {
-    return new Promise((resolve) => {
+  if (canNative) {
+    const okNative = await new Promise<boolean>((resolve) => {
       if (token !== speakToken) {
         resolve(false)
         return
       }
       const synth = window.speechSynthesis
       try {
-        if (synth.paused) synth.resume()
+        // Ensure not stuck paused (Chrome bug)
+        synth.resume()
       } catch {
         /* ignore */
       }
 
       const u = new SpeechSynthesisUtterance(trimmed)
-      u.voice = nativeVoice
-      u.lang = nativeVoice.lang || (isAm ? 'am-ET' : 'en-US')
+      if (nativeVoice) {
+        u.voice = nativeVoice
+        u.lang = nativeVoice.lang
+      } else {
+        u.lang = isAm ? 'am-ET' : 'en-US'
+      }
       u.rate = normalizeRate(opts.rate ?? 1)
       u.pitch = 1
       u.volume = 1
 
       let finished = false
-      const finish = (ok: boolean, err?: string) => {
+      const finish = (ok: boolean) => {
         if (finished) return
         finished = true
-        if (err) opts.onError?.(err)
-        if (ok) opts.onEnd?.()
         resolve(ok)
       }
 
-      u.onstart = () => opts.onStart?.()
-      u.onend = () => finish(true)
+      u.onstart = () => {
+        if (token === speakToken) opts.onStart?.()
+      }
+      u.onend = () => {
+        if (token === speakToken) opts.onEnd?.()
+        finish(true)
+      }
       u.onerror = (ev) => {
-        const type = (ev as SpeechSynthesisErrorEvent).error
-        if (type === 'interrupted' || type === 'canceled') {
+        const err = (ev as SpeechSynthesisErrorEvent).error
+        // interrupted/canceled = we stopped it on purpose or StrictMode remount
+        if (err === 'interrupted' || err === 'canceled') {
           finish(false)
           return
         }
-        void speakViaTranslate(trimmed, langOpt, token, opts.onStart).then((ok) => {
-          if (ok) {
-            opts.onEnd?.()
-            resolve(true)
-          } else {
-            finish(
-              false,
-              isAm
-                ? 'Could not play Amharic audio. Check your network connection.'
-                : 'Could not play speech.'
-            )
-          }
-        })
+        finish(false)
       }
 
       try {
+        // CRITICAL: speak in this same turn — no await before this line
         synth.speak(u)
-        if (synth.paused) synth.resume()
+        try {
+          synth.resume()
+        } catch {
+          /* ignore */
+        }
+
+        // Chrome sometimes freezes the queue — poke resume
         const poke = window.setInterval(() => {
           if (token !== speakToken || finished) {
             clearInterval(poke)
@@ -312,43 +406,49 @@ export async function speak(text: string, opts: SpeakOptions = {}): Promise<bool
           } catch {
             /* ignore */
           }
-        }, 1000)
-        const maxMs = Math.min(60000, Math.max(4000, trimmed.length * 120))
+        }, 800)
+
+        const maxMs = Math.min(45000, Math.max(3500, trimmed.length * 90))
         window.setTimeout(() => {
           clearInterval(poke)
-          if (!finished && token === speakToken) {
-            try {
-              synth.cancel()
-            } catch {
-              /* ignore */
+          if (!finished) {
+            // Treat timeout as soft success if still same token (utterance may have finished without event)
+            if (token === speakToken) {
+              try {
+                synth.cancel()
+              } catch {
+                /* ignore */
+              }
+              opts.onEnd?.()
+              finish(true)
+            } else {
+              finish(false)
             }
-            finish(true)
           }
         }, maxMs)
       } catch {
-        void speakViaTranslate(trimmed, langOpt, token, opts.onStart).then((ok) => {
-          if (ok) {
-            opts.onEnd?.()
-            resolve(true)
-          } else {
-            finish(false, 'Speech failed to start.')
-          }
-        })
+        finish(false)
       }
     })
+
+    if (okNative) return true
+    if (token !== speakToken) return false
+    // Fall through to audio if native failed (not canceled)
   }
 
-  opts.onStart?.()
-  const ok = await speakViaTranslate(trimmed, langOpt, token)
+  // —— Audio fallback (esp. Amharic without system voice) ——
   if (token !== speakToken) return false
-  if (ok) {
+  const okAudio = await speakViaAudio(trimmed, langOpt, token, opts.onStart)
+  if (token !== speakToken) return false
+  if (okAudio) {
     opts.onEnd?.()
     return true
   }
+
   opts.onError?.(
     isAm
-      ? 'Amharic audio failed. Allow network access or try again on Wi‑Fi.'
-      : 'Speech failed. Try Chrome/Edge and unmute the tab.'
+      ? 'Amharic speech failed. Install an Amharic system voice, or check network (online audio).'
+      : 'Speech failed. Use Chrome or Edge, unmute the tab, and try again.'
   )
   return false
 }
