@@ -24,7 +24,7 @@ export default function AudioPlayer({
   const [rate, setRate] = useState(1)
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
-  const [ttsOk, setTtsOk] = useState(false)
+  const [ttsOk, setTtsOk] = useState(true)
   const playIdRef = useRef(0)
   const playingRef = useRef(false)
 
@@ -37,9 +37,20 @@ export default function AudioPlayer({
   }
 
   useEffect(() => {
-    setTtsOk(isTtsAvailable() || true) // Translate fallback always available online
+    setTtsOk(isTtsAvailable() || true)
     void loadVoices()
   }, [])
+
+  // When the spoken text or language changes, stop and clear UI state
+  useEffect(() => {
+    playIdRef.current += 1
+    setPlayingSafe(false)
+    setError(null)
+    setProgress(0)
+    setDuration(0)
+    // Do not call stopSpeaking here — other players may be intentional
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ttsText, ttsLang, src])
 
   useEffect(() => {
     if (!src) return
@@ -70,6 +81,7 @@ export default function AudioPlayer({
       el.removeEventListener('loadedmetadata', onTime)
       audioRef.current = null
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src])
 
   useEffect(() => {
@@ -253,8 +265,8 @@ export default function AudioPlayer({
           {useTts && (
             <p className="mt-2 text-xs text-gray-400">
               {isAmharic
-                ? 'አማርኛ · uses device voice if installed, otherwise online Amharic audio'
-                : 'Browser voice · unmute device · Chrome/Edge recommended'}
+                ? 'አማርኛ · device voice or online audio'
+                : 'Browser voice · unmute · Chrome/Edge recommended'}
             </p>
           )}
         </>
