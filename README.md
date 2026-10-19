@@ -11,8 +11,8 @@ npm run dev
 ```
 
 ```bash
-npm run test:run   # unit tests
-npm run build      # production build
+npm run test:run
+npm run build
 ```
 
 ## Progress
@@ -25,20 +25,23 @@ npm run build      # production build
 | 5 Audio & listening | ✅ |
 | 6 Administration | ✅ |
 | 7 Production readiness | ✅ |
+| 8 Shared typing engine | ✅ |
 
-### Phase 7 includes
+### Phase 8 — Typing
 
-- **Supabase schema** — `supabase/migrations/001_initial_schema.sql` (profiles, courses, chapters, lessons, enrollments, progress, audit + RLS)
-- **Vitest** — `src/lib/utils.test.ts`, `src/lib/progress.test.ts`
-- **CI** — `.github/workflows/ci.yml` (install, test, build)
-- **Vercel** — `vercel.json` SPA rewrites
-- **Docs** — [docs/DEPLOY.md](docs/DEPLOY.md), [docs/SECURITY.md](docs/SECURITY.md)
+- **Unicode-safe** engine (grapheme-aware for Ethiopic)
+- Live **WPM** + **accuracy**
+- English & Amharic passages (beginner → intermediate)
+- **Virtual Amharic keyboard** on Amharic mode
+- Results saved locally (last 50) + best WPM per language
+- Route: `/typing`
 
-App still runs fully on **localStorage mocks** until you set real Supabase keys and swap auth/progress clients.
+Auth/progress still mock until Supabase keys are connected. Schema is ready in `supabase/migrations/`.
 
-## Deploy
+## Docs
 
-See [docs/DEPLOY.md](docs/DEPLOY.md).
+- [docs/DEPLOY.md](docs/DEPLOY.md)
+- [docs/SECURITY.md](docs/SECURITY.md)
 
 ## License
 
