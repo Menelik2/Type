@@ -4,73 +4,32 @@ export type ListenItem = {
   id: string
   lang: VoiceLang
   text: string
-  /** Shown when support is on */
   support?: string
   level: 'easy' | 'medium' | 'hard'
 }
 
-/**
- * Practice bank for Listen → Type mode (mode=audio).
- * Mirrors YouType "Listen. Type. Remember."
- */
 export const listenTypeItems: ListenItem[] = [
   // English easy
-  {
-    id: 'en-e1',
-    lang: 'en',
-    text: 'Hello, how are you?',
-    support: 'A simple greeting',
-    level: 'easy',
-  },
-  {
-    id: 'en-e2',
-    lang: 'en',
-    text: 'I am fine, thank you.',
-    level: 'easy',
-  },
-  {
-    id: 'en-e3',
-    lang: 'en',
-    text: 'My name is Sara.',
-    level: 'easy',
-  },
-  {
-    id: 'en-e4',
-    lang: 'en',
-    text: 'Good morning, everyone.',
-    level: 'easy',
-  },
-  {
-    id: 'en-e5',
-    lang: 'en',
-    text: 'See you tomorrow.',
-    level: 'easy',
-  },
+  { id: 'en-e1', lang: 'en', text: 'Hello, how are you?', support: 'Greeting', level: 'easy' },
+  { id: 'en-e2', lang: 'en', text: 'I am fine, thank you.', level: 'easy' },
+  { id: 'en-e3', lang: 'en', text: 'My name is Sara.', level: 'easy' },
+  { id: 'en-e4', lang: 'en', text: 'Good morning, everyone.', level: 'easy' },
+  { id: 'en-e5', lang: 'en', text: 'See you tomorrow.', level: 'easy' },
+  { id: 'en-e6', lang: 'en', text: 'Please sit down.', level: 'easy' },
+  { id: 'en-e7', lang: 'en', text: 'I am a student.', level: 'easy' },
+  { id: 'en-e8', lang: 'en', text: 'This is my book.', level: 'easy' },
+  { id: 'en-e9', lang: 'en', text: 'Where is the school?', level: 'easy' },
+  { id: 'en-e10', lang: 'en', text: 'I like coffee and tea.', level: 'easy' },
+
   // English medium
-  {
-    id: 'en-m1',
-    lang: 'en',
-    text: 'She is reading a book in the library.',
-    level: 'medium',
-  },
-  {
-    id: 'en-m2',
-    lang: 'en',
-    text: 'We go to school every morning.',
-    level: 'medium',
-  },
-  {
-    id: 'en-m3',
-    lang: 'en',
-    text: 'I have lived here for three years.',
-    level: 'medium',
-  },
-  {
-    id: 'en-m4',
-    lang: 'en',
-    text: 'Can you help me with this exercise?',
-    level: 'medium',
-  },
+  { id: 'en-m1', lang: 'en', text: 'She is reading a book in the library.', level: 'medium' },
+  { id: 'en-m2', lang: 'en', text: 'We go to school every morning.', level: 'medium' },
+  { id: 'en-m3', lang: 'en', text: 'I have lived here for three years.', level: 'medium' },
+  { id: 'en-m4', lang: 'en', text: 'Can you help me with this exercise?', level: 'medium' },
+  { id: 'en-m5', lang: 'en', text: 'My family lives in a small house.', level: 'medium' },
+  { id: 'en-m6', lang: 'en', text: 'Yesterday I learned ten new words.', level: 'medium' },
+  { id: 'en-m7', lang: 'en', text: 'The teacher asked a difficult question.', level: 'medium' },
+
   // English hard
   {
     id: 'en-h1',
@@ -84,63 +43,50 @@ export const listenTypeItems: ListenItem[] = [
     text: 'If I had known about the test, I would have studied more.',
     level: 'hard',
   },
+  {
+    id: 'en-h3',
+    lang: 'en',
+    text: 'Learning a new language takes practice every day.',
+    level: 'hard',
+  },
+
   // Amharic easy
-  {
-    id: 'am-e1',
-    lang: 'am',
-    text: 'ሰላም',
-    support: 'Hello / Peace',
-    level: 'easy',
-  },
-  {
-    id: 'am-e2',
-    lang: 'am',
-    text: 'አመሰግናለሁ',
-    support: 'Thank you',
-    level: 'easy',
-  },
-  {
-    id: 'am-e3',
-    lang: 'am',
-    text: 'እንደምን አደርክ?',
-    support: 'How are you? (to a man)',
-    level: 'easy',
-  },
-  {
-    id: 'am-e4',
-    lang: 'am',
-    text: 'ደህና ነኝ',
-    support: 'I am fine',
-    level: 'easy',
-  },
-  {
-    id: 'am-e5',
-    lang: 'am',
-    text: 'ስሜ ሳራ ነው',
-    support: 'My name is Sara',
-    level: 'easy',
-  },
+  { id: 'am-e1', lang: 'am', text: 'ሰላም', support: 'Hello / Peace', level: 'easy' },
+  { id: 'am-e2', lang: 'am', text: 'አመሰግናለሁ', support: 'Thank you', level: 'easy' },
+  { id: 'am-e3', lang: 'am', text: 'እንደምን አደርክ?', support: 'How are you? (m)', level: 'easy' },
+  { id: 'am-e4', lang: 'am', text: 'ደህና ነኝ', support: 'I am fine', level: 'easy' },
+  { id: 'am-e5', lang: 'am', text: 'ስሜ ሳራ ነው', support: 'My name is Sara', level: 'easy' },
+  { id: 'am-e6', lang: 'am', text: 'አዎ', support: 'Yes', level: 'easy' },
+  { id: 'am-e7', lang: 'am', text: 'አይ', support: 'No', level: 'easy' },
+  { id: 'am-e8', lang: 'am', text: 'እሺ', support: 'OK', level: 'easy' },
+  { id: 'am-e9', lang: 'am', text: 'ውሃ', support: 'Water', level: 'easy' },
+  { id: 'am-e10', lang: 'am', text: 'መጽሐፍ', support: 'Book', level: 'easy' },
+  { id: 'am-e11', lang: 'am', text: 'ቤት', support: 'House', level: 'easy' },
+  { id: 'am-e12', lang: 'am', text: 'እናት', support: 'Mother', level: 'easy' },
+
   // Amharic medium
+  { id: 'am-m1', lang: 'am', text: 'ቤቴ ውብ ነው', support: 'My house is beautiful', level: 'medium' },
+  { id: 'am-m2', lang: 'am', text: 'እኔ ተማሪ ነኝ', support: 'I am a student', level: 'medium' },
+  { id: 'am-m3', lang: 'am', text: 'ውሃ እፈልጋለሁ', support: 'I want water', level: 'medium' },
+  { id: 'am-m4', lang: 'am', text: 'መምህር ደግ ነው', support: 'The teacher is kind', level: 'medium' },
+  { id: 'am-m5', lang: 'am', text: 'ቡና ትወዳለህ?', support: 'Do you like coffee?', level: 'medium' },
+  { id: 'am-m6', lang: 'am', text: 'ዛሬ ትምህርት ቤት እሄዳለሁ', support: 'Today I go to school', level: 'medium' },
+  { id: 'am-m7', lang: 'am', text: 'አባቴ በባንክ ይሰራል', support: 'My father works in a bank', level: 'medium' },
+
+  // Amharic hard
   {
-    id: 'am-m1',
+    id: 'am-h1',
     lang: 'am',
-    text: 'ቤቴ ውብ ነው',
-    support: 'My house is beautiful',
-    level: 'medium',
+    text: 'በየቀኑ እንግሊዝኛ እና አማርኛ እለማመዳለሁ',
+    support: 'I practice English and Amharic every day',
+    level: 'hard',
   },
   {
-    id: 'am-m2',
+    id: 'am-h2',
     lang: 'am',
-    text: 'እኔ ተማሪ ነኝ',
-    support: 'I am a student',
-    level: 'medium',
-  },
-  {
-    id: 'am-m3',
-    lang: 'am',
-    text: 'ውሃ እፈልጋለሁ',
-    support: 'I want water',
-    level: 'medium',
+    text: 'ጓደኛዬ መጽሐፍ አንብቦኛል',
+    support: 'My friend read a book to me',
+    level: 'hard',
   },
 ]
 
