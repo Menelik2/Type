@@ -1,30 +1,45 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BookOpen, Clock, Flame, Target, ArrowRight } from 'lucide-react'
 import { sampleCourses } from '../data/sampleCourses'
+import {
+  getEnrolledCourseIds,
+  getProgressPercent,
+  getCompletedLessonCount,
+  getCourseProgress,
+} from '../lib/progress'
+import { useAuth } from '../hooks/useAuth'
 import { cn } from '../lib/utils'
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
+  const { user } = useAuth()
   const interfaceLang = (i18n.language === 'am' ? 'am' : 'en') as 'en' | 'am'
 
-  // Mock user from localStorage (Phase 1)
-  const mockUser = (() => {
-    try {
-      return JSON.parse(localStorage.getItem('mockUser') || 'null')
-    } catch {
-      return null
-    }
-  })()
+  const displayName = user?.name || 'Learner'
 
-  const displayName = mockUser?.name || 'Learner'
+  const enrolledCourses = useMemo(() => {
+    const ids = getEnrolledCourseIds()
+    return sampleCourses
+      .filter((c) => ids.includes(c.id))
+      .map((c) => ({
+        course: c,
+        percent: getProgressPercent(c.id, c.lessonsCount),
+        completed: getCompletedLessonCount(c.id),
+        lastAccessed: getCourseProgress(c.id)?.lastAccessedAt,
+      }))
+      .sort((a, b) => {
+        const ta = a.lastAccessed ? new Date(a.lastAccessed).getTime() : 0
+        const tb = b.lastAccessed ? new Date(b.lastAccessed).getTime() : 0
+        return tb - ta
+      })
+  }, [])
 
-  // Mock enrolled courses (first two for demo)
-  const enrolled = sampleCourses.slice(0, 2)
+  const totalCompletedLessons = enrolledCourses.reduce((sum, e) => sum + e.completed, 0)
 
   return (
     <div className="mx-auto max-w-6xl">
-      {/* Welcome */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
           {t('dashboard.welcome')}, {displayName}
@@ -32,24 +47,24 @@ export default function DashboardPage() {
         <p className="mt-1 text-gray-600">Continue your learning journey</p>
       </div>
 
-      {/* Stats row */}
+      {/* Stats – based on real local progress */}
       <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={Flame} label="Day streak" value="3" accent="text-orange-500" />
-        <StatCard icon={Clock} label="Study time" value="2.5h" accent="text-indigo-500" />
-        <StatCard icon={BookOpen} label="Lessons done" value="12" accent="text-emerald-500" />
-        <StatCard icon={Target} label="Daily goal" value="80%" accent="text-purple-500" />
+        <StatCard icon={Flame} label="Day streak" value="—" accent="text-orange-500" />
+        <StatCard icon={Clock} label="Courses enrolled" value={String(enrolledCourses.length)} accent="text-indigo-500" />
+        <StatCard icon={BookOpen} label="Lessons done" value={String(totalCompletedLessons)} accent="text-emerald-500" />
+        <StatCard icon={Target} label="In progress" value={String(enrolledCourses.filter((e) => e.percent > 0 && e.percent < 100).length)} accent="text-purple-500" />
       </div>
 
       {/* Continue Learning */}
       <section className="mb-10">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.continueLearning')}</h2>
-          <Link to="/my-courses" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-            View all
+          <Link to="/courses" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
+            {t('dashboard.exploreCourses')}
           </Link>
         </div>
 
-        {enrolled.length === 0 ? (
+        {enrolledCourses.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-200 bg-white py-14 text-center">
             <BookOpen className="mx-auto h-10 w-10 text-gray-300" />
             <p className="mt-4 text-gray-600">{t('dashboard.noCourses')}</p>
@@ -63,10 +78,8 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {enrolled.map((course) => {
+            {enrolledCourses.map(({ course, percent, completed }) => {
               const title = course.title[interfaceLang] || course.title.en
-              // Mock progress
-              const progress = course.id === 'en-beginner-1' ? 35 : 12
               return (
                 <div
                   key={course.id}
@@ -90,16 +103,15 @@ export default function DashboardPage() {
 
                   <div className="mt-4">
                     <div className="mb-1.5 flex justify-between text-xs text-gray-500">
-                      <span>{progress}% complete</span>
+                      <span>{percent}% complete</span>
                       <span>
-                        {Math.round((progress / 100) * course.lessonsCount)} / {course.lessonsCount}{' '}
-                        lessons
+                        {completed} / {course.lessonsCount} lessons
                       </span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-gray-100">
                       <div
                         className="h-full rounded-full bg-indigo-500 transition-all"
-                        style={{ width: `${progress}%` }}
+                        style={{ width: `${percent}%` }}
                       />
                     </div>
                   </div>
@@ -108,7 +120,7 @@ export default function DashboardPage() {
                     to={`/learn/${course.slug}`}
                     className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-50 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
                   >
-                    {t('common.continue')}
+                    {percent > 0 ? t('common.continue') : t('common.start')}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -122,29 +134,32 @@ export default function DashboardPage() {
       <section>
         <h2 className="mb-4 text-lg font-semibold text-gray-900">Recommended for you</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sampleCourses.slice(2).map((course) => {
-            const title = course.title[interfaceLang] || course.title.en
-            return (
-              <Link
-                key={course.id}
-                to={`/courses/${course.slug}`}
-                className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md"
-              >
-                <span
-                  className={cn(
-                    'rounded-full px-2.5 py-0.5 text-xs font-medium',
-                    course.learningLanguage === 'en'
-                      ? 'bg-indigo-100 text-indigo-700'
-                      : 'bg-amber-100 text-amber-800'
-                  )}
+          {sampleCourses
+            .filter((c) => !getEnrolledCourseIds().includes(c.id))
+            .slice(0, 3)
+            .map((course) => {
+              const title = course.title[interfaceLang] || course.title.en
+              return (
+                <Link
+                  key={course.id}
+                  to={`/courses/${course.slug}`}
+                  className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md"
                 >
-                  {course.learningLanguage === 'en' ? 'English' : 'አማርኛ'}
-                </span>
-                <h3 className="mt-2 font-semibold text-gray-900">{title}</h3>
-                <p className="mt-1 text-sm text-gray-500">{course.lessonsCount} lessons</p>
-              </Link>
-            )
-          })}
+                  <span
+                    className={cn(
+                      'rounded-full px-2.5 py-0.5 text-xs font-medium',
+                      course.learningLanguage === 'en'
+                        ? 'bg-indigo-100 text-indigo-700'
+                        : 'bg-amber-100 text-amber-800'
+                    )}
+                  >
+                    {course.learningLanguage === 'en' ? 'English' : 'አማርኛ'}
+                  </span>
+                  <h3 className="mt-2 font-semibold text-gray-900">{title}</h3>
+                  <p className="mt-1 text-sm text-gray-500">{course.lessonsCount} lessons</p>
+                </Link>
+              )
+            })}
         </div>
       </section>
     </div>
