@@ -1,24 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { Play, Pause, RotateCcw, Volume2, AlertCircle } from 'lucide-react'
-import { speak, stopSpeaking, isTtsAvailable, loadVoices, toVoiceLang } from '../../lib/voice'
+import { speak, stopSpeaking, isTtsAvailable, loadVoices } from '../../lib/voice'
 import { cn } from '../../lib/utils'
 
 type Props = {
-  /** Remote audio URL (Supabase Storage or CDN). Optional if using TTS. */
   src?: string
-  /** Text for browser SpeechSynthesis fallback. */
   ttsText?: string
-  /** BCP-47 language tag for TTS, e.g. 'en-US' or 'am-ET' */
   ttsLang?: string
   label?: string
   className?: string
 }
 
-/**
- * Audio player:
- * - HTML5 audio when `src` is set
- * - Reliable TTS via shared `speak()` when only `ttsText` is set
- */
 export default function AudioPlayer({
   src,
   ttsText,
@@ -34,8 +26,14 @@ export default function AudioPlayer({
   const [duration, setDuration] = useState(0)
   const [ttsOk, setTtsOk] = useState(false)
   const playIdRef = useRef(0)
+  const playingRef = useRef(false)
 
   const useTts = !src && !!ttsText?.trim()
+
+  const setPlayingSafe = (v: boolean) => {
+    playingRef.current = v
+    setPlaying(v)
+  }
 
   useEffect(() => {
     setTtsOk(isTtsAvailable())
@@ -52,10 +50,10 @@ export default function AudioPlayer({
       setProgress(el.currentTime)
       setDuration(el.duration || 0)
     }
-    const onEnded = () => setPlaying(false)
+    const onEnded = () => setPlayingSafe(false)
     const onErr = () => {
       setError('Audio could not be loaded.')
-      setPlaying(false)
+      setPlayingSafe(false)
     }
 
     el.addEventListener('timeupdate', onTime)
@@ -71,17 +69,21 @@ export default function AudioPlayer({
       el.removeEventListener('loadedmetadata', onTime)
       audioRef.current = null
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rate applied in separate effect
   }, [src])
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = rate
   }, [rate])
 
-  // Stop TTS when this component unmounts
+  // Only stop if this instance was actively playing (avoids React StrictMode killing TTS)
   useEffect(() => {
     return () => {
       playIdRef.current += 1
-      stopSpeaking()
+      if (playingRef.current) {
+        stopSpeaking()
+        audioRef.current?.pause()
+      }
     }
   }, [])
 
@@ -91,33 +93,33 @@ export default function AudioPlayer({
       return
     }
     if (!isTtsAvailable()) {
-      setError('Speech is not supported here. Open in Chrome or Edge.')
+      setError('Speech is not supported here. Open in Chrome or Edge on desktop.')
       return
     }
 
     const id = ++playIdRef.current
     setError(null)
-    setPlaying(true)
+    setPlayingSafe(true)
 
     const ok = await speak(ttsText, {
-      lang: ttsLang || toVoiceLang(ttsLang),
+      lang: ttsLang,
       rate,
       onStart: () => {
-        if (id === playIdRef.current) setPlaying(true)
+        if (id === playIdRef.current) setPlayingSafe(true)
       },
       onEnd: () => {
-        if (id === playIdRef.current) setPlaying(false)
+        if (id === playIdRef.current) setPlayingSafe(false)
       },
       onError: (msg) => {
         if (id === playIdRef.current) {
           setError(msg)
-          setPlaying(false)
+          setPlayingSafe(false)
         }
       },
     })
 
     if (id === playIdRef.current && !ok) {
-      setPlaying(false)
+      setPlayingSafe(false)
     }
   }
 
@@ -125,13 +127,13 @@ export default function AudioPlayer({
     playIdRef.current += 1
     stopSpeaking()
     audioRef.current?.pause()
-    setPlaying(false)
+    setPlayingSafe(false)
   }
 
   const toggle = () => {
     setError(null)
     if (useTts) {
-      if (playing) stopAll()
+      if (playingRef.current) stopAll()
       else void playTts()
       return
     }
@@ -140,15 +142,15 @@ export default function AudioPlayer({
       setError('No audio source available.')
       return
     }
-    if (playing) {
+    if (playingRef.current) {
       el.pause()
-      setPlaying(false)
+      setPlayingSafe(false)
     } else {
       el.play()
-        .then(() => setPlaying(true))
+        .then(() => setPlayingSafe(true))
         .catch(() => {
-          setError('Playback failed. Check the audio file or browser permissions.')
-          setPlaying(false)
+          setError('Playback failed. Unmute the tab and try again.')
+          setPlayingSafe(false)
         })
     }
   }
@@ -163,7 +165,7 @@ export default function AudioPlayer({
     if (!el) return
     el.currentTime = 0
     el.play()
-      .then(() => setPlaying(true))
+      .then(() => setPlayingSafe(true))
       .catch(() => setError('Replay failed.'))
   }
 
