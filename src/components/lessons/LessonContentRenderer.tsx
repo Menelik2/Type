@@ -1,34 +1,43 @@
 import { useState } from 'react'
-import { Volume2 } from 'lucide-react'
-import type { LessonContent, VocabItem } from '../../data/englishLessons'
+import type { LessonContent, VocabItem, Exercise } from '../../data/englishLessons'
 import ExerciseRenderer from '../exercises/ExerciseRenderer'
+import ListeningExercise from '../exercises/ListeningExercise'
+import AudioPlayer from '../audio/AudioPlayer'
 import { cn } from '../../lib/utils'
 
 type Props = {
   content: LessonContent
 }
 
+function isListeningExercise(
+  ex: Exercise
+): ex is Extract<Exercise, { type: 'listen_choose' | 'dictation' }> {
+  return ex.type === 'listen_choose' || ex.type === 'dictation'
+}
+
 export default function LessonContentRenderer({ content }: Props) {
   return (
     <div className="space-y-8">
-      {/* Intro / body */}
       {'intro' in content && content.intro && (
         <p className="text-lg text-gray-700">{content.intro}</p>
       )}
 
       {content.type === 'text' && (
-        <div className="prose prose-indigo max-w-none">
-          {content.body.split('\n\n').map((para, i) => (
-            <p key={i} className="mb-4 whitespace-pre-line text-gray-700 leading-relaxed">
-              {renderMarkdownLite(para)}
-            </p>
-          ))}
+        <div className="space-y-4">
+          {content.audioText && (
+            <AudioPlayer ttsText={content.audioText} ttsLang="en-US" label="Listen to this lesson" />
+          )}
+          <div className="prose prose-indigo max-w-none">
+            {content.body.split('\n\n').map((para, i) => (
+              <p key={i} className="mb-4 whitespace-pre-line text-gray-700 leading-relaxed">
+                {renderMarkdownLite(para)}
+              </p>
+            ))}
+          </div>
         </div>
       )}
 
-      {content.type === 'vocab' && (
-        <VocabSection items={content.items} />
-      )}
+      {content.type === 'vocab' && <VocabSection items={content.items} />}
 
       {content.type === 'grammar' && (
         <div className="space-y-6">
@@ -65,15 +74,30 @@ export default function LessonContentRenderer({ content }: Props) {
         </div>
       )}
 
-      {/* Exercises */}
-      {'exercises' in content && content.exercises && content.exercises.length > 0 && (
+      {content.type === 'listening' && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Practice</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Listening practice</h3>
           {content.exercises.map((ex, i) => (
-            <ExerciseRenderer key={i} exercise={ex} index={i} />
+            <ListeningExercise key={i} exercise={ex} index={i} />
           ))}
         </div>
       )}
+
+      {'exercises' in content &&
+        content.exercises &&
+        content.exercises.length > 0 &&
+        content.type !== 'listening' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Practice</h3>
+            {content.exercises.map((ex, i) =>
+              isListeningExercise(ex) ? (
+                <ListeningExercise key={i} exercise={ex} index={i} />
+              ) : (
+                <ExerciseRenderer key={i} exercise={ex} index={i} />
+              )
+            )}
+          </div>
+        )}
     </div>
   )
 }
@@ -81,41 +105,49 @@ export default function LessonContentRenderer({ content }: Props) {
 function VocabSection({ items, compact }: { items: VocabItem[]; compact?: boolean }) {
   const [flipped, setFlipped] = useState<Record<number, boolean>>({})
 
-  const toggle = (i: number) =>
-    setFlipped((prev) => ({ ...prev, [i]: !prev[i] }))
+  const toggle = (i: number) => setFlipped((prev) => ({ ...prev, [i]: !prev[i] }))
 
   return (
     <div className={cn('grid gap-3', compact ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3')}>
       {items.map((item, i) => (
-        <button
+        <div
           key={i}
-          onClick={() => toggle(i)}
-          className="group relative flex min-h-[120px] flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 text-center shadow-sm transition hover:shadow-md"
+          className="flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm"
         >
-          {!flipped[i] ? (
-            <>
-              <span className="text-lg font-semibold text-gray-900">{item.word}</span>
-              {item.phonetic && (
-                <span className="mt-1 text-xs text-gray-400">{item.phonetic}</span>
-              )}
-              <span className="mt-2 text-xs text-gray-400 opacity-0 transition group-hover:opacity-100">
-                Tap to reveal
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="text-base font-medium text-indigo-700">{item.translation_am}</span>
-              <p className="mt-2 text-sm text-gray-600">{item.example}</p>
-              <p className="mt-1 text-xs text-gray-400">{item.example_am}</p>
-            </>
-          )}
-        </button>
+          <button
+            onClick={() => toggle(i)}
+            className="flex min-h-[100px] flex-1 flex-col items-center justify-center p-4 text-center transition hover:bg-gray-50"
+          >
+            {!flipped[i] ? (
+              <>
+                <span className="text-lg font-semibold text-gray-900">{item.word}</span>
+                {item.phonetic && (
+                  <span className="mt-1 text-xs text-gray-400">{item.phonetic}</span>
+                )}
+                <span className="mt-2 text-xs text-gray-400">Tap to reveal</span>
+              </>
+            ) : (
+              <>
+                <span className="text-base font-medium text-indigo-700">{item.translation_am}</span>
+                <p className="mt-2 text-sm text-gray-600">{item.example}</p>
+                <p className="mt-1 text-xs text-gray-400">{item.example_am}</p>
+              </>
+            )}
+          </button>
+          <div className="border-t border-gray-50 px-2 pb-2">
+            <AudioPlayer
+              src={item.audioSrc}
+              ttsText={item.word}
+              ttsLang="en-US"
+              className="border-0 shadow-none"
+            />
+          </div>
+        </div>
       ))}
     </div>
   )
 }
 
-/** Very light markdown: **bold** */
 function renderMarkdownLite(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g)
   return parts.map((part, i) => {
