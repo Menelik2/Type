@@ -11,7 +11,7 @@ import {
   Menu,
   Shield,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import LanguageSwitcher from '../LanguageSwitcher'
 import { isStaff } from '../../lib/admin'
 import { useAuth } from '../../hooks/useAuth'
@@ -32,7 +32,7 @@ const navItems = [
 export default function Layout() {
   const { t } = useTranslation()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const staff = isStaff()
+  const [staff, setStaff] = useState(() => isStaff())
   const { user } = useAuth()
   const settings = getSettings()
   const avatarLetter = (
@@ -43,6 +43,20 @@ export default function Layout() {
   )
     .charAt(0)
     .toUpperCase()
+
+  useEffect(() => {
+    const sync = () => setStaff(isStaff())
+    sync()
+    window.addEventListener('storage', sync)
+    window.addEventListener('focus', sync)
+    // Same-tab role changes (admin bootstrap) — poll lightly while mounted
+    const id = window.setInterval(sync, 1500)
+    return () => {
+      window.removeEventListener('storage', sync)
+      window.removeEventListener('focus', sync)
+      clearInterval(id)
+    }
+  }, [])
 
   return (
     <div className="flex min-h-screen bg-gray-50">
