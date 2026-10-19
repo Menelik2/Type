@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Play, Pause, RotateCcw, Volume2, AlertCircle } from 'lucide-react'
+import { speak, stopSpeaking, isTtsAvailable, loadVoices, toVoiceLang } from '../../lib/voice'
 import { cn } from '../../lib/utils'
 
 type Props = {
   /** Remote audio URL (Supabase Storage or CDN). Optional if using TTS. */
   src?: string
-  /** Text for browser SpeechSynthesis fallback (English works best). */
+  /** Text for browser SpeechSynthesis fallback. */
   ttsText?: string
   /** BCP-47 language tag for TTS, e.g. 'en-US' or 'am-ET' */
   ttsLang?: string
@@ -14,10 +15,9 @@ type Props = {
 }
 
 /**
- * Audio player with:
- * - HTML5 audio when `src` is provided
- * - SpeechSynthesis TTS fallback when only `ttsText` is provided
- * - Playback rate control, replay, honest error state
+ * Audio player:
+ * - HTML5 audio when `src` is set
+ * - Reliable TTS via shared `speak()` when only `ttsText` is set
  */
 export default function AudioPlayer({
   src,
@@ -32,12 +32,14 @@ export default function AudioPlayer({
   const [rate, setRate] = useState(1)
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
-  const [ttsSupported, setTtsSupported] = useState(false)
+  const [ttsOk, setTtsOk] = useState(false)
+  const playIdRef = useRef(0)
 
-  const useTts = !src && !!ttsText
+  const useTts = !src && !!ttsText?.trim()
 
   useEffect(() => {
-    setTtsSupported(typeof window !== 'undefined' && 'speechSynthesis' in window)
+    setTtsOk(isTtsAvailable())
+    void loadVoices()
   }, [])
 
   useEffect(() => {
@@ -75,37 +77,62 @@ export default function AudioPlayer({
     if (audioRef.current) audioRef.current.playbackRate = rate
   }, [rate])
 
-  const stopTts = () => {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel()
+  // Stop TTS when this component unmounts
+  useEffect(() => {
+    return () => {
+      playIdRef.current += 1
+      stopSpeaking()
     }
-    setPlaying(false)
-  }
+  }, [])
 
-  const playTts = () => {
-    if (!ttsText || !ttsSupported) {
-      setError('Speech synthesis is not available in this browser.')
+  const playTts = async () => {
+    if (!ttsText?.trim()) {
+      setError('No text to speak.')
       return
     }
-    stopTts()
-    const u = new SpeechSynthesisUtterance(ttsText)
-    u.lang = ttsLang
-    u.rate = rate
-    u.onend = () => setPlaying(false)
-    u.onerror = () => {
-      setError('Could not play speech. Try another browser or upload real audio later.')
-      setPlaying(false)
+    if (!isTtsAvailable()) {
+      setError('Speech is not supported here. Open in Chrome or Edge.')
+      return
     }
+
+    const id = ++playIdRef.current
     setError(null)
     setPlaying(true)
-    window.speechSynthesis.speak(u)
+
+    const ok = await speak(ttsText, {
+      lang: ttsLang || toVoiceLang(ttsLang),
+      rate,
+      onStart: () => {
+        if (id === playIdRef.current) setPlaying(true)
+      },
+      onEnd: () => {
+        if (id === playIdRef.current) setPlaying(false)
+      },
+      onError: (msg) => {
+        if (id === playIdRef.current) {
+          setError(msg)
+          setPlaying(false)
+        }
+      },
+    })
+
+    if (id === playIdRef.current && !ok) {
+      setPlaying(false)
+    }
+  }
+
+  const stopAll = () => {
+    playIdRef.current += 1
+    stopSpeaking()
+    audioRef.current?.pause()
+    setPlaying(false)
   }
 
   const toggle = () => {
     setError(null)
     if (useTts) {
-      if (playing) stopTts()
-      else playTts()
+      if (playing) stopAll()
+      else void playTts()
       return
     }
     const el = audioRef.current
@@ -129,7 +156,7 @@ export default function AudioPlayer({
   const replay = () => {
     setError(null)
     if (useTts) {
-      playTts()
+      void playTts()
       return
     }
     const el = audioRef.current
@@ -140,7 +167,7 @@ export default function AudioPlayer({
       .catch(() => setError('Replay failed.'))
   }
 
-  const noSource = !src && !ttsText
+  const noSource = !src && !ttsText?.trim()
 
   return (
     <div
@@ -167,7 +194,7 @@ export default function AudioPlayer({
             <button
               type="button"
               onClick={toggle}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm transition hover:bg-indigo-700"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm transition hover:bg-indigo-700 active:scale-95"
               aria-label={playing ? 'Pause' : 'Play'}
             >
               {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
@@ -186,8 +213,10 @@ export default function AudioPlayer({
                 <span>
                   {useTts
                     ? playing
-                      ? 'Playing (TTS)…'
-                      : 'Tap play · browser voice'
+                      ? 'Speaking…'
+                      : ttsOk
+                        ? 'Tap play'
+                        : 'TTS unavailable'
                     : formatTime(progress) + ' / ' + formatTime(duration)}
                 </span>
                 <div className="flex items-center gap-1">
@@ -222,7 +251,7 @@ export default function AudioPlayer({
 
           {useTts && (
             <p className="mt-2 text-xs text-gray-400">
-              Using browser text-to-speech. Real recorded audio can replace this later via Supabase Storage.
+              Browser voice · unmute device · Chrome/Edge recommended
             </p>
           )}
         </>
