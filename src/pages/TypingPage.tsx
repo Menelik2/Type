@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Keyboard, RotateCcw, Trophy } from 'lucide-react'
+import { Keyboard, RotateCcw, Trophy, Volume2 } from 'lucide-react'
 import { getPassages, type TypingPassage } from '../data/typingPassages'
 import {
   bestWpm,
@@ -13,6 +13,7 @@ import {
   type TypingLang,
 } from '../lib/typing'
 import { getSettings } from '../lib/settings'
+import { speak, stopSpeaking } from '../lib/voice'
 import AmharicKeyboard from '../components/keyboard/AmharicKeyboard'
 import { cn } from '../lib/utils'
 
@@ -78,6 +79,7 @@ export default function TypingPage() {
     setStartedAt(null)
     setEndedAt(null)
     setLiveMs(0)
+    stopSpeaking()
     requestAnimationFrame(() => textareaRef.current?.focus())
   }, [])
 
@@ -89,6 +91,8 @@ export default function TypingPage() {
       setShowKeyboard(getSettings().showAmharicKeyboardDefault)
     }
   }, [lang, reset])
+
+  useEffect(() => () => stopSpeaking(), [])
 
   useEffect(() => {
     if (phase !== 'running' || !startedAt) return
@@ -111,6 +115,7 @@ export default function TypingPage() {
 
     setEndedAt(end)
     setPhase('done')
+    stopSpeaking()
     saveTypingResult({
       lang,
       passageId: passage.id,
@@ -140,6 +145,11 @@ export default function TypingPage() {
   )
   const best = bestWpm(lang)
 
+  const hearPassage = () => {
+    if (!target) return
+    speak(target, { lang, rate: 0.9 })
+  }
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -149,7 +159,7 @@ export default function TypingPage() {
             {t('nav.typing')}
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            English & Amharic · WPM and accuracy
+            English & Amharic · WPM and accuracy · Hear the passage
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-1">
@@ -203,6 +213,17 @@ export default function TypingPage() {
       </div>
 
       <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-3 flex justify-end">
+          <button
+            type="button"
+            onClick={hearPassage}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+          >
+            <Volume2 className="h-3.5 w-3.5" />
+            Hear passage
+          </button>
+        </div>
+
         <div
           role="button"
           tabIndex={0}
@@ -267,7 +288,7 @@ export default function TypingPage() {
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-gray-500">
-            {phase === 'idle' && 'Typing starts the timer.'}
+            {phase === 'idle' && 'Typing starts the timer. Use Hear passage first if you like.'}
             {phase === 'running' &&
               `${Math.round(durationMs / 1000)}s · ${inputLen}/${targetLen} chars`}
             {phase === 'done' && 'Finished — result saved.'}
