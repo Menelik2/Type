@@ -1,0 +1,68 @@
+{
+  "app": {
+    "name": "Type",
+    "tagline": "Learn English & Amharic"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "myCourses": "My Courses",
+    "explore": "Explore Courses",
+    "learnEnglish": "Learn English",
+    "learnAmharic": "Learn Amharic",
+    "vocabulary": "Vocabulary",
+    "typing": "Typing Practice",
+    "progress": "Progress",
+    "settings": "Settings",
+    "home": "Home",
+    "learn": "Learn",
+    "practice": "Practice",
+    "profile": "Profile"
+  },
+  "auth": {
+    "login": "Log in",
+    "register": "Sign up",
+    "logout": "Log out",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "landing": {
+    "heroTitle": "Master English and Amharic",
+    "heroSubtitle": "A complete bilingual learning platform for reading, writing, typing, vocabulary, grammar and listening.",
+    "ctaStart": "Start learning",
+    "ctaTry": "Try a lesson",
+    "learnEnglish": "Learn English",
+    "learnAmharic": "Learn Amharic",
+    "featuresTitle": "Everything you need to learn",
+    "featureVocab": "Vocabulary",
+    "featureGrammar": "Grammar",
+    "featureReading": "Reading",
+    "featureTyping": "Typing",
+    "featureListening": "Listening",
+    "featureProgress": "Progress tracking"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "continueLearning": "Continue Learning",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "exploreCourses": "Explore Courses",
+    "noCourses": "You haven't enrolled in any courses yet.",
+    "startExploring": "Start exploring"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "start": "Start",
+    "next": "Next",
+    "previous": "Previous",
+    "complete": "Complete",
+    "progress": "Progress"
+  }
+}
