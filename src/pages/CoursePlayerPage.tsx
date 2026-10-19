@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { getCourseBySlug } from '../data/sampleCourses'
 import { getEnglishContent } from '../data/englishLessons'
+import { getAmharicContent } from '../data/amharicLessons'
 import {
   enrollInCourse,
   getCourseProgress,
@@ -21,6 +22,7 @@ import {
   isEnrolled,
 } from '../lib/progress'
 import LessonContentRenderer from '../components/lessons/LessonContentRenderer'
+import AmharicLessonRenderer from '../components/lessons/AmharicLessonRenderer'
 import { cn } from '../lib/utils'
 
 export default function CoursePlayerPage() {
@@ -84,10 +86,14 @@ export default function CoursePlayerPage() {
     ? !!progress?.lessons[currentLessonId]?.completed
     : false
 
-  // Real content for English lessons
-  const lessonContent =
+  const englishContent =
     currentLessonId && course.learningLanguage === 'en'
       ? getEnglishContent(currentLessonId)
+      : null
+
+  const amharicContent =
+    currentLessonId && course.learningLanguage === 'am'
+      ? getAmharicContent(currentLessonId, course.slug)
       : null
 
   const goToLesson = (lessonId: string) => {
@@ -107,7 +113,6 @@ export default function CoursePlayerPage() {
 
   return (
     <div className="-m-4 flex h-[calc(100vh-4rem)] flex-col lg:-m-6">
-      {/* Top bar */}
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4">
         <div className="flex items-center gap-3">
           <button
@@ -145,7 +150,6 @@ export default function CoursePlayerPage() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <aside
           className={cn(
             'absolute inset-y-0 left-0 z-30 w-72 shrink-0 overflow-y-auto border-r border-gray-200 bg-white transition-transform lg:static lg:translate-x-0',
@@ -201,7 +205,6 @@ export default function CoursePlayerPage() {
           />
         )}
 
-        {/* Main lesson content */}
         <main className="flex flex-1 flex-col overflow-y-auto bg-gray-50">
           {currentLesson ? (
             <>
@@ -214,19 +217,10 @@ export default function CoursePlayerPage() {
                 </h1>
 
                 <div className="mt-8">
-                  {lessonContent ? (
-                    <LessonContentRenderer content={lessonContent} />
-                  ) : course.learningLanguage === 'am' ? (
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8">
-                      <div className="rounded-xl bg-amber-50 p-5 text-amber-900">
-                        <p className="font-medium">አማርኛ ትምህርት</p>
-                        <p className="mt-2 text-sm leading-relaxed">
-                          ይህ የአማርኛ ትምህርት ቦታ ነው። በPhase 4 ፊደላት፣ ንባብ፣ ቃላት እና ልምምዶች
-                          በዝርዝር ይጨመራሉ። አሁን ትምህርቱን እንደተጠናቀቀ ምልክት በማድረግ እድገትዎን
-                          መከታተል ይችላሉ።
-                        </p>
-                      </div>
-                    </div>
+                  {englishContent ? (
+                    <LessonContentRenderer content={englishContent} />
+                  ) : amharicContent ? (
+                    <AmharicLessonRenderer content={amharicContent} />
                   ) : (
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8">
                       <p className="text-gray-600">
@@ -237,7 +231,6 @@ export default function CoursePlayerPage() {
                 </div>
               </div>
 
-              {/* Bottom navigation */}
               <div className="sticky bottom-0 border-t border-gray-200 bg-white px-4 py-4 sm:px-8">
                 <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
                   <button
