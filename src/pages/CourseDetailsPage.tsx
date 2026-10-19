@@ -1,12 +1,19 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, BookOpen, Clock, CheckCircle2 } from 'lucide-react'
 import { getCourseBySlug } from '../data/sampleCourses'
+import {
+  enrollInCourse,
+  isEnrolled,
+  getProgressPercent,
+  getCompletedLessonCount,
+} from '../lib/progress'
 import { cn } from '../lib/utils'
 
 export default function CourseDetailsPage() {
   const { slug } = useParams<{ slug: string }>()
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const interfaceLang = (i18n.language === 'am' ? 'am' : 'en') as 'en' | 'am'
 
   const course = slug ? getCourseBySlug(slug) : undefined
@@ -25,6 +32,14 @@ export default function CourseDetailsPage() {
   const title = course.title[interfaceLang] || course.title.en
   const description = course.description[interfaceLang] || course.description.en
   const objectives = course.objectives[interfaceLang] || course.objectives.en
+  const enrolled = isEnrolled(course.id)
+  const percent = getProgressPercent(course.id, course.lessonsCount)
+  const completedCount = getCompletedLessonCount(course.id)
+
+  const handleStart = () => {
+    enrollInCourse(course.id)
+    navigate(`/learn/${course.slug}`)
+  }
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -37,7 +52,6 @@ export default function CourseDetailsPage() {
       </Link>
 
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        {/* Header banner */}
         <div
           className={cn(
             'px-6 py-10 sm:px-10',
@@ -76,17 +90,33 @@ export default function CourseDetailsPage() {
             </span>
           </div>
 
+          {enrolled && percent > 0 && (
+            <div className="mt-6 max-w-xs">
+              <div className="mb-1.5 flex justify-between text-sm text-gray-600">
+                <span>{percent}% complete</span>
+                <span>
+                  {completedCount}/{course.lessonsCount}
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-white/60">
+                <div
+                  className="h-full rounded-full bg-indigo-500"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="mt-8">
-            <Link
-              to={`/learn/${course.slug}`}
+            <button
+              onClick={handleStart}
               className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
             >
-              {t('common.start')} Learning
-            </Link>
+              {enrolled && percent > 0 ? t('common.continue') : t('common.start')} Learning
+            </button>
           </div>
         </div>
 
-        {/* Objectives */}
         <div className="border-t border-gray-100 px-6 py-8 sm:px-10">
           <h2 className="text-lg font-semibold text-gray-900">Learning objectives</h2>
           <ul className="mt-4 space-y-2">
@@ -99,7 +129,6 @@ export default function CourseDetailsPage() {
           </ul>
         </div>
 
-        {/* Chapters outline */}
         <div className="border-t border-gray-100 px-6 py-8 sm:px-10">
           <h2 className="text-lg font-semibold text-gray-900">Course outline</h2>
           <div className="mt-4 space-y-4">
