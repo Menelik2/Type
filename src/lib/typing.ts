@@ -22,8 +22,12 @@ const RESULTS_KEY = 'type_typing_results'
 /** Split into user-perceived characters (handles Ethiopic code points). */
 export function graphemes(text: string): string[] {
   if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
-    const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
-    return [...seg.segment(text)].map((s) => s.segment)
+    try {
+      const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+      return [...seg.segment(text)].map((s) => s.segment)
+    } catch {
+      /* fall through */
+    }
   }
   return Array.from(text)
 }
@@ -38,10 +42,10 @@ export function calcAccuracy(correct: number, totalTyped: number): number {
  * Standard word length = 5 characters.
  */
 export function calcWpm(correctChars: number, durationMs: number): number {
-  if (durationMs <= 0) return 0
+  if (durationMs <= 0 || correctChars <= 0) return 0
   const minutes = durationMs / 60000
   if (minutes <= 0) return 0
-  return Math.max(0, Math.round((correctChars / 5) / minutes))
+  return Math.max(0, Math.round(correctChars / 5 / minutes))
 }
 
 export type CharStatus = 'pending' | 'correct' | 'incorrect' | 'current'
@@ -53,9 +57,11 @@ export function compareInput(
   const t = graphemes(target)
   const i = graphemes(input)
   const statuses: CharStatus[] = t.map((_, idx) => {
-    if (idx > i.length) return 'pending'
+    if (idx < i.length) {
+      return i[idx] === t[idx] ? 'correct' : 'incorrect'
+    }
     if (idx === i.length) return 'current'
-    return i[idx] === t[idx] ? 'correct' : 'incorrect'
+    return 'pending'
   })
   let correct = 0
   let errors = 0
