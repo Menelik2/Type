@@ -12,12 +12,15 @@ import CoursePlayerPage from './pages/CoursePlayerPage'
 import TypingPage from './pages/TypingPage'
 import VocabularyPage from './pages/VocabularyPage'
 import ProgressPage from './pages/ProgressPage'
+import SettingsPage from './pages/SettingsPage'
+import ProfilePage from './pages/ProfilePage'
 import RequireStaff from './components/admin/RequireStaff'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminCourses from './pages/admin/AdminCourses'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminAudit from './pages/admin/AdminAudit'
 import AdminTranslations from './pages/admin/AdminTranslations'
+import { getSettings } from './lib/settings'
 
 function App() {
   const { i18n } = useTranslation()
@@ -25,6 +28,16 @@ function App() {
   useEffect(() => {
     document.documentElement.lang = i18n.language
   }, [i18n.language])
+
+  useEffect(() => {
+    const s = getSettings()
+    if (s.interfaceLang && s.interfaceLang !== i18n.language) {
+      void i18n.changeLanguage(s.interfaceLang)
+    }
+    if (s.reduceMotion) {
+      document.documentElement.classList.add('reduce-motion')
+    }
+  }, [i18n])
 
   return (
     <Routes>
@@ -43,8 +56,8 @@ function App() {
         <Route path="/vocabulary" element={<VocabularyPage />} />
         <Route path="/typing" element={<TypingPage />} />
         <Route path="/progress" element={<ProgressPage />} />
-        <Route path="/settings" element={<ComingSoon title="Settings" />} />
-        <Route path="/profile" element={<ComingSoon title="Profile" />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
 
         <Route path="/admin" element={<RequireStaff />}>
           <Route index element={<AdminDashboard />} />
@@ -55,15 +68,6 @@ function App() {
         </Route>
       </Route>
     </Routes>
-  )
-}
-
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <div className="mx-auto max-w-lg py-20 text-center">
-      <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-      <p className="mt-2 text-gray-600">Coming in a later phase</p>
-    </div>
   )
 }
 
