@@ -6,35 +6,39 @@
 git clone https://github.com/Menelik2/Type.git
 cd Type
 npm install
+cp .env.example .env.local   # optional until Supabase is connected
 npm run dev
+```
+
+```bash
+npm run test:run   # unit tests
+npm run build      # production build
 ```
 
 ## Progress
 
 | Phase | Status |
 |-------|--------|
-| 0 Foundation | ✅ |
-| 1 Public pages & i18n | ✅ |
-| 2 Dashboard & progress | ✅ |
+| 0–2 Foundation, public pages, dashboard | ✅ |
 | 3 English MVP | ✅ |
 | 4 Amharic Fidel MVP | ✅ |
 | 5 Audio & listening | ✅ |
 | 6 Administration | ✅ |
-| 7 Production (Supabase, tests, deploy) | 🔜 |
+| 7 Production readiness | ✅ |
 
-### Phase 6 — Admin
-- **Staff guard** (`/admin/*`) — login + editor/admin role
-- **Dashboard** — course counts, recent audit
-- **Courses** — draft / published / archived + audit on change
-- **Users & roles** — local role switcher (dev only; production needs RLS)
-- **Translation completeness** — EN/AM field checklist with publish warnings
-- **Audit log** — last 100 admin actions
+### Phase 7 includes
 
-**Try admin:** Log in → open `/admin` → set role to **admin** on the access screen → Manage courses.
+- **Supabase schema** — `supabase/migrations/001_initial_schema.sql` (profiles, courses, chapters, lessons, enrollments, progress, audit + RLS)
+- **Vitest** — `src/lib/utils.test.ts`, `src/lib/progress.test.ts`
+- **CI** — `.github/workflows/ci.yml` (install, test, build)
+- **Vercel** — `vercel.json` SPA rewrites
+- **Docs** — [docs/DEPLOY.md](docs/DEPLOY.md), [docs/SECURITY.md](docs/SECURITY.md)
 
-## Security notes
-- Roles are localStorage mocks until Supabase `profiles.role` + RLS
-- Never allow self-elevation in production from the client alone
+App still runs fully on **localStorage mocks** until you set real Supabase keys and swap auth/progress clients.
+
+## Deploy
+
+See [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## License
 
