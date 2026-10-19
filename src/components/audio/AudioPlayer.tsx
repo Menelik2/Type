@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Play, Pause, RotateCcw, Volume2, AlertCircle } from 'lucide-react'
-import { speak, stopSpeaking, isTtsAvailable, loadVoices } from '../../lib/voice'
+import { speak, stopSpeaking, isTtsAvailable, loadVoices, warmUpVoices } from '../../lib/voice'
 import { cn } from '../../lib/utils'
 
 type Props = {
@@ -24,7 +24,6 @@ export default function AudioPlayer({
   const [rate, setRate] = useState(1)
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
-  const [ttsOk, setTtsOk] = useState(true)
   const playIdRef = useRef(0)
   const playingRef = useRef(false)
 
@@ -37,18 +36,17 @@ export default function AudioPlayer({
   }
 
   useEffect(() => {
-    setTtsOk(isTtsAvailable() || true)
     void loadVoices()
   }, [])
 
-  // When the spoken text or language changes, stop and clear UI state
+  // Text/lang change: reset UI; stop only if this instance was playing
   useEffect(() => {
     playIdRef.current += 1
+    if (playingRef.current) stopSpeaking()
     setPlayingSafe(false)
     setError(null)
     setProgress(0)
     setDuration(0)
-    // Do not call stopSpeaking here — other players may be intentional
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsText, ttsLang, src])
 
@@ -98,17 +96,21 @@ export default function AudioPlayer({
     }
   }, [])
 
-  const playTts = async () => {
+  const playTts = () => {
     if (!ttsText?.trim()) {
       setError('No text to speak.')
       return
     }
 
+    // Unlock / refresh engine on the same user gesture
+    warmUpVoices()
+
     const id = ++playIdRef.current
     setError(null)
     setPlayingSafe(true)
 
-    const ok = await speak(ttsText, {
+    // Fire speak without blocking the click handler stack unnecessarily
+    void speak(ttsText, {
       lang: ttsLang,
       rate,
       onStart: () => {
@@ -123,11 +125,11 @@ export default function AudioPlayer({
           setPlayingSafe(false)
         }
       },
+    }).then((ok) => {
+      if (id === playIdRef.current && !ok && !error) {
+        setPlayingSafe(false)
+      }
     })
-
-    if (id === playIdRef.current && !ok) {
-      setPlayingSafe(false)
-    }
   }
 
   const stopAll = () => {
@@ -141,7 +143,7 @@ export default function AudioPlayer({
     setError(null)
     if (useTts) {
       if (playingRef.current) stopAll()
-      else void playTts()
+      else playTts()
       return
     }
     const el = audioRef.current
@@ -165,7 +167,10 @@ export default function AudioPlayer({
   const replay = () => {
     setError(null)
     if (useTts) {
-      void playTts()
+      stopSpeaking()
+      // slight delay so cancel settles, still from user gesture via setTimeout 0 loses activation
+      // Call play immediately after stop — voice.ts handles cancel
+      playTts()
       return
     }
     const el = audioRef.current
@@ -206,7 +211,11 @@ export default function AudioPlayer({
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm transition hover:bg-indigo-700 active:scale-95"
               aria-label={playing ? 'Pause' : 'Play'}
             >
-              {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+              {playing ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Play className="ml-0.5 h-5 w-5" />
+              )}
             </button>
 
             <div className="min-w-0 flex-1">
@@ -225,30 +234,28 @@ export default function AudioPlayer({
                       ? isAmharic
                         ? 'Speaking አማርኛ…'
                         : 'Speaking…'
-                      : ttsOk
+                      : isTtsAvailable()
                         ? 'Tap play'
-                        : 'TTS unavailable'
+                        : 'Use online audio'}
                     : formatTime(progress) + ' / ' + formatTime(duration)}
                 </span>
-                {!isAmharic && (
-                  <div className="flex items-center gap-1">
-                    {[0.75, 1, 1.25].map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => setRate(r)}
-                        className={cn(
-                          'rounded px-1.5 py-0.5 font-medium transition',
-                          rate === r
-                            ? 'bg-indigo-100 text-indigo-700'
-                            : 'text-gray-400 hover:text-gray-700'
-                        )}
-                      >
-                        {r}x
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <div className="flex items-center gap-1">
+                  {[0.75, 1, 1.25].map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setRate(r)}
+                      className={cn(
+                        'rounded px-1.5 py-0.5 font-medium transition',
+                        rate === r
+                          ? 'bg-indigo-100 text-indigo-700'
+                          : 'text-gray-400 hover:text-gray-700'
+                      )}
+                    >
+                      {r}x
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -265,17 +272,29 @@ export default function AudioPlayer({
           {useTts && (
             <p className="mt-2 text-xs text-gray-400">
               {isAmharic
-                ? 'አማርኛ · device voice or online audio'
-                : 'Browser voice · unmute · Chrome/Edge recommended'}
+                ? 'አማርኛ · system voice if installed, else online audio'
+                : 'Browser voice · unmute tab · Chrome/Edge best'}
             </p>
           )}
         </>
       )}
 
       {error && (
-        <div className="mt-2 flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
+        <div className="mt-2 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p>{error}</p>
+            <button
+              type="button"
+              onClick={() => {
+                setError(null)
+                playTts()
+              }}
+              className="mt-1 text-xs font-medium text-red-800 underline"
+            >
+              Try again
+            </button>
+          </div>
         </div>
       )}
     </div>
