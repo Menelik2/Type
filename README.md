@@ -19,31 +19,31 @@ Open http://localhost:5173
 Vite + React + TypeScript + Tailwind · i18n (EN/AM) · responsive layout · Ethiopic fonts
 
 ### ✅ Phase 1 — Public pages
-Landing · Login/Register · Course catalog + filters · Course details · sample bilingual courses
+Landing · Login/Register · Course catalog · Course details
 
 ### ✅ Phase 2 — Dashboard & progress
-Local progress store · enrollment · Course Player · resume last lesson · real progress on Dashboard
+Enrollment · Course Player · resume · real progress tracking
 
 ### ✅ Phase 3 — English MVP
-- Real lesson content for **English for Beginners** and **Everyday English Vocabulary**
-- Vocabulary flashcards (tap to reveal Amharic translation + examples)
-- Interactive exercises: multiple choice, fill-in-the-blank, true/false, spelling
-- Instant feedback + retry
-- Content types: text, vocab, grammar, reading (extensible)
+Vocabulary flashcards · MCQ / fill-blank / T-F / spelling exercises · full beginner + vocab courses
 
-### 🔜 Phase 4 — Amharic Fidel MVP
-Interactive Fidel character families, recognition, reading & writing practice
+### ✅ Phase 4 — Amharic Fidel MVP
+- **Fidel intro** — what is the Ethiopic script (EN + አማርኛ)
+- **Character families** — ሀ · ለ · ሐ with all 7 vowel orders
+- **Fidel recognition** exercises (pick the correct character)
+- **Type-the-character** with **virtual Amharic keyboard**
+- **Amharic reading** — common words + simple sentences with comprehension
+- Unicode-safe Ethiopic rendering throughout
 
-### 🔜 Later
-Typing engine · Audio · Supabase Auth + DB · Admin
+### 🔜 Next
+Shared typing engine · Audio · Supabase Auth + DB · Admin tools
 
-## Try the English lessons
+## Try Amharic lessons
 
-1. Log in / Sign up
-2. Open **English for Beginners** or **Everyday English Vocabulary**
-3. Work through alphabet, greetings, family vocabulary
-4. Complete the interactive exercises
-5. Progress is saved automatically
+1. Log in
+2. Open **Amharic Fidel Basics** or **Amharic Reading Practice**
+3. Learn character families, practice recognition & typing on the virtual keyboard
+4. Progress is saved automatically
 
 ## License
 
