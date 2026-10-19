@@ -10,7 +10,8 @@ import {
   Menu,
   X,
 } from 'lucide-react'
-import { getCourseBySlug, type Course } from '../data/sampleCourses'
+import { getCourseBySlug } from '../data/sampleCourses'
+import { getEnglishContent } from '../data/englishLessons'
 import {
   enrollInCourse,
   getCourseProgress,
@@ -19,6 +20,7 @@ import {
   getProgressPercent,
   isEnrolled,
 } from '../lib/progress'
+import LessonContentRenderer from '../components/lessons/LessonContentRenderer'
 import { cn } from '../lib/utils'
 
 export default function CoursePlayerPage() {
@@ -29,7 +31,6 @@ export default function CoursePlayerPage() {
 
   const course = slug ? getCourseBySlug(slug) : undefined
 
-  // Flatten all lessons for navigation
   const allLessons = useMemo(() => {
     if (!course) return []
     return course.chapters.flatMap((ch) =>
@@ -43,16 +44,11 @@ export default function CoursePlayerPage() {
 
   const [currentLessonId, setCurrentLessonId] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [progressTick, setProgressTick] = useState(0) // force re-render after progress changes
+  const [, setProgressTick] = useState(0)
 
-  // Initialize / resume
   useEffect(() => {
     if (!course) return
-
-    // Auto-enroll on first open
-    if (!isEnrolled(course.id)) {
-      enrollInCourse(course.id)
-    }
+    if (!isEnrolled(course.id)) enrollInCourse(course.id)
 
     const progress = getCourseProgress(course.id)
     const resumeId =
@@ -63,7 +59,6 @@ export default function CoursePlayerPage() {
     setCurrentLessonId(resumeId)
   }, [course, allLessons])
 
-  // Track last accessed
   useEffect(() => {
     if (course && currentLessonId) {
       setLastAccessed(course.id, currentLessonId)
@@ -89,6 +84,12 @@ export default function CoursePlayerPage() {
     ? !!progress?.lessons[currentLessonId]?.completed
     : false
 
+  // Real content for English lessons
+  const lessonContent =
+    currentLessonId && course.learningLanguage === 'en'
+      ? getEnglishContent(currentLessonId)
+      : null
+
   const goToLesson = (lessonId: string) => {
     setCurrentLessonId(lessonId)
     setSidebarOpen(false)
@@ -98,12 +99,8 @@ export default function CoursePlayerPage() {
     if (!currentLessonId) return
     markLessonComplete(course.id, currentLessonId)
     setProgressTick((t) => t + 1)
-
-    // Auto-advance to next incomplete lesson if available
     const next = allLessons[currentIndex + 1]
-    if (next) {
-      setTimeout(() => setCurrentLessonId(next.id), 400)
-    }
+    if (next) setTimeout(() => setCurrentLessonId(next.id), 400)
   }
 
   const title = course.title[interfaceLang] || course.title.en
@@ -148,7 +145,7 @@ export default function CoursePlayerPage() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar – chapters & lessons */}
+        {/* Sidebar */}
         <aside
           className={cn(
             'absolute inset-y-0 left-0 z-30 w-72 shrink-0 overflow-y-auto border-r border-gray-200 bg-white transition-transform lg:static lg:translate-x-0',
@@ -157,9 +154,7 @@ export default function CoursePlayerPage() {
         >
           <div className="p-4">
             <h2 className="mb-1 text-sm font-semibold text-gray-900">{title}</h2>
-            <p className="mb-4 text-xs text-gray-500">
-              {getProgressPercent(course.id, course.lessonsCount)}% complete
-            </p>
+            <p className="mb-4 text-xs text-gray-500">{percent}% complete</p>
 
             {course.chapters.map((chapter, chIdx) => (
               <div key={chapter.id} className="mb-4">
@@ -199,7 +194,6 @@ export default function CoursePlayerPage() {
           </div>
         </aside>
 
-        {/* Overlay for mobile */}
         {sidebarOpen && (
           <div
             className="fixed inset-0 z-20 bg-black/30 lg:hidden"
@@ -219,29 +213,27 @@ export default function CoursePlayerPage() {
                   {currentLesson.title[interfaceLang] || currentLesson.title.en}
                 </h1>
 
-                {/* Lesson body – placeholder content for Phase 2 */}
-                <div className="mt-8 rounded-2xl border border-gray-100 bg-white p-6 sm:p-8">
-                  <div className="prose prose-indigo max-w-none">
-                    <p className="text-gray-700 leading-relaxed">
-                      This is a placeholder for the interactive lesson content.
-                      In later phases this area will contain vocabulary cards,
-                      Fidel character practice, reading passages, typing exercises,
-                      audio players, and quizzes.
-                    </p>
-                    <p className="mt-4 text-gray-600">
-                      For now, mark the lesson as complete to track your progress
-                      and unlock the next lesson.
-                    </p>
-
-                    {course.learningLanguage === 'am' && (
-                      <div className="mt-6 rounded-xl bg-amber-50 p-4 text-amber-900">
+                <div className="mt-8">
+                  {lessonContent ? (
+                    <LessonContentRenderer content={lessonContent} />
+                  ) : course.learningLanguage === 'am' ? (
+                    <div className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8">
+                      <div className="rounded-xl bg-amber-50 p-5 text-amber-900">
                         <p className="font-medium">አማርኛ ትምህርት</p>
-                        <p className="mt-1 text-sm">
-                          ይህ የአማርኛ ትምህርት ቦታ ነው። በሚቀጥሉት ደረጃዎች ፊደላት፣ ንባብ እና ልምምዶች ይጨመራሉ።
+                        <p className="mt-2 text-sm leading-relaxed">
+                          ይህ የአማርኛ ትምህርት ቦታ ነው። በPhase 4 ፊደላት፣ ንባብ፣ ቃላት እና ልምምዶች
+                          በዝርዝር ይጨመራሉ። አሁን ትምህርቱን እንደተጠናቀቀ ምልክት በማድረግ እድገትዎን
+                          መከታተል ይችላሉ።
                         </p>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8">
+                      <p className="text-gray-600">
+                        Lesson content coming soon. Mark complete to track progress.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
