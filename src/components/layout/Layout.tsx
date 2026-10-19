@@ -10,6 +10,7 @@ import {
   Settings,
   Menu,
   Shield,
+  Headphones,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import LanguageSwitcher from '../LanguageSwitcher'
@@ -24,6 +25,7 @@ const navItems = [
   { to: '/learn/english', icon: Languages, key: 'learnEnglish' },
   { to: '/learn/amharic', icon: Languages, key: 'learnAmharic' },
   { to: '/vocabulary', icon: BookOpen, key: 'vocabulary' },
+  { to: '/practice/audio', icon: Headphones, key: 'listenType' },
   { to: '/typing', icon: Keyboard, key: 'typing' },
   { to: '/progress', icon: BarChart3, key: 'progress' },
   { to: '/settings', icon: Settings, key: 'settings' },
@@ -49,7 +51,6 @@ export default function Layout() {
     sync()
     window.addEventListener('storage', sync)
     window.addEventListener('focus', sync)
-    // Same-tab role changes (admin bootstrap) — poll lightly while mounted
     const id = window.setInterval(sync, 1500)
     return () => {
       window.removeEventListener('storage', sync)
@@ -75,7 +76,7 @@ export default function Layout() {
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700"
             >
               <Icon className="h-4 w-4" />
-              {t(`nav.${key}`)}
+              {t(`nav.${key}`, { defaultValue: key === 'listenType' ? 'Listen & Type' : key })}
             </Link>
           ))}
           {staff && (
@@ -141,7 +142,7 @@ export default function Layout() {
                     className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-indigo-50"
                   >
                     <Icon className="h-4 w-4" />
-                    {t(`nav.${key}`)}
+                    {t(`nav.${key}`, { defaultValue: key === 'listenType' ? 'Listen & Type' : key })}
                   </Link>
                 ))}
                 {staff && (
