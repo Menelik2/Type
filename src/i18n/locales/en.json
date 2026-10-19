@@ -24,9 +24,11 @@
     "logout": "Log out",
     "email": "Email",
     "password": "Password",
+    "name": "Full name",
     "forgotPassword": "Forgot password?",
     "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?"
+    "hasAccount": "Already have an account?",
+    "invalidCredentials": "Invalid email or password"
   },
   "landing": {
     "heroTitle": "Master English and Amharic",
