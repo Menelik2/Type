@@ -2,12 +2,17 @@ import { useState } from 'react'
 import { CheckCircle2, XCircle, RotateCcw } from 'lucide-react'
 import type { AmharicExercise } from '../../data/amharicLessons'
 import AmharicKeyboard from '../keyboard/AmharicKeyboard'
+import { graphemes } from '../../lib/typing'
 import { cn } from '../../lib/utils'
 
 type Props = {
   exercise: AmharicExercise
   index: number
   familyChars?: string[]
+}
+
+function matchesTarget(typed: string, target: string) {
+  return typed.trim() === target.trim()
 }
 
 export default function AmharicExerciseRenderer({ exercise, index, familyChars }: Props) {
@@ -44,7 +49,6 @@ export default function AmharicExerciseRenderer({ exercise, index, familyChars }
         )}
       </div>
 
-      {/* Fidel recognize (pick the correct character) */}
       {exercise.type === 'fidel_recognize' && (
         <>
           <p className="mb-1 font-medium text-gray-900">{exercise.prompt}</p>
@@ -83,7 +87,6 @@ export default function AmharicExerciseRenderer({ exercise, index, familyChars }
         </>
       )}
 
-      {/* Multiple choice */}
       {exercise.type === 'multiple_choice' && (
         <>
           <p className="mb-1 font-medium text-gray-900">{exercise.question}</p>
@@ -128,7 +131,6 @@ export default function AmharicExerciseRenderer({ exercise, index, familyChars }
         </>
       )}
 
-      {/* Type character / word with virtual keyboard */}
       {exercise.type === 'type_char' && (
         <>
           <p className="mb-1 font-medium text-gray-900">{exercise.prompt}</p>
@@ -145,12 +147,14 @@ export default function AmharicExerciseRenderer({ exercise, index, familyChars }
               <AmharicKeyboard
                 activeFamily={familyChars}
                 onKey={(c) => setTyped((t) => t + c)}
-                onBackspace={() => setTyped((t) => t.slice(0, -1))}
+                onBackspace={() =>
+                  setTyped((t) => graphemes(t).slice(0, -1).join(''))
+                }
                 onSpace={() => setTyped((t) => t + ' ')}
               />
               <button
-                disabled={!typed}
-                onClick={() => submit(typed === exercise.target)}
+                disabled={!typed.trim()}
+                onClick={() => submit(matchesTarget(typed, exercise.target))}
                 className="mt-3 w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40"
               >
                 Check
@@ -164,7 +168,6 @@ export default function AmharicExerciseRenderer({ exercise, index, familyChars }
         </>
       )}
 
-      {/* Fill blank */}
       {exercise.type === 'fill_blank' && (
         <>
           <p className="mb-4 font-medium text-gray-900">{exercise.sentence}</p>
@@ -178,9 +181,7 @@ export default function AmharicExerciseRenderer({ exercise, index, familyChars }
               />
               <button
                 disabled={!typed.trim()}
-                onClick={() =>
-                  submit(typed.trim() === exercise.answer)
-                }
+                onClick={() => submit(matchesTarget(typed, exercise.answer))}
                 className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40"
               >
                 Check
