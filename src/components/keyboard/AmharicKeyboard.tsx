@@ -1,10 +1,8 @@
-import { useState } from 'react'
 import { Delete, Space } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 /**
  * Simple virtual Amharic (Fidel) keyboard for mobile & practice.
- * Shows one family at a time or a compact common set.
  */
 
 type Props = {
@@ -30,12 +28,15 @@ export default function AmharicKeyboard({
   activeFamily,
   className,
 }: Props) {
-  const rows = activeFamily
-    ? [activeFamily]
-    : DEFAULT_KEYS
+  const rows = activeFamily ? [activeFamily] : DEFAULT_KEYS
 
   return (
-    <div className={cn('select-none rounded-2xl border border-gray-200 bg-gray-50 p-2', className)}>
+    <div
+      className={cn(
+        'select-none rounded-2xl border border-gray-200 bg-gray-50 p-2',
+        className
+      )}
+    >
       {rows.map((row, ri) => (
         <div key={ri} className="mb-1.5 flex justify-center gap-1.5 last:mb-0">
           {row.map((char) => (
@@ -43,7 +44,7 @@ export default function AmharicKeyboard({
               key={char}
               type="button"
               onClick={() => onKey(char)}
-              className="flex h-11 min-w-[2.5rem] flex-1 items-center justify-center rounded-xl bg-white text-lg font-medium text-gray-900 shadow-sm transition active:bg-indigo-100 active:scale-95 hover:bg-indigo-50"
+              className="flex h-11 min-w-[2.5rem] flex-1 items-center justify-center rounded-xl bg-white text-lg font-medium text-gray-900 shadow-sm transition hover:bg-indigo-50 active:scale-95 active:bg-indigo-100"
             >
               {char}
             </button>
