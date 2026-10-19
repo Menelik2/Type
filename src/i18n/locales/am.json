@@ -1,0 +1,68 @@
+{
+  "app": {
+    "name": "ታይፕ",
+    "tagline": "እንግሊዝኛ እና አማርኛ ተማር"
+  },
+  "nav": {
+    "dashboard": "ዳሽቦርድ",
+    "myCourses": "የእኔ ኮርሶች",
+    "explore": "ኮርሶችን አስስ",
+    "learnEnglish": "እንግሊዝኛ ተማር",
+    "learnAmharic": "አማርኛ ተማር",
+    "vocabulary": "ቃላት",
+    "typing": "የቁልፍ ሰሌዳ ልምምድ",
+    "progress": "እድገት",
+    "settings": "ቅንብሮች",
+    "home": "መነሻ",
+    "learn": "ተማር",
+    "practice": "ልምምድ",
+    "profile": "መገለጫ"
+  },
+  "auth": {
+    "login": "ግባ",
+    "register": "ተመዝገብ",
+    "logout": "ውጣ",
+    "email": "ኢሜይል",
+    "password": "የይለፍ ቃል",
+    "forgotPassword": "የይለፍ ቃል ረሳህ?",
+    "noAccount": "መለያ የለህም?",
+    "hasAccount": "መለያ አለህ?"
+  },
+  "landing": {
+    "heroTitle": "እንግሊዝኛ እና አማርኛን ተቆጣጠር",
+    "heroSubtitle": "ለንባብ፣ ጽሕፈት፣ ቁልፍ ሰሌዳ፣ ቃላት፣ ሰዋሰው እና ማዳመጥ የተሟላ ባለሁለት ቋንቋ የትምህርት መድረክ።",
+    "ctaStart": "መማር ጀምር",
+    "ctaTry": "ትምህርት ሞክር",
+    "learnEnglish": "እንግሊዝኛ ተማር",
+    "learnAmharic": "አማርኛ ተማር",
+    "featuresTitle": "ለመማር የሚያስፈልግህ ሁሉ",
+    "featureVocab": "ቃላት",
+    "featureGrammar": "ሰዋሰው",
+    "featureReading": "ንባብ",
+    "featureTyping": "ቁልፍ ሰሌዳ",
+    "featureListening": "ማዳመጥ",
+    "featureProgress": "የእድገት ክትትል"
+  },
+  "dashboard": {
+    "welcome": "እንኳን ደህና መጣህ",
+    "continueLearning": "መማር ቀጥል",
+    "inProgress": "በሂደት ላይ",
+    "completed": "የተጠናቀቁ",
+    "exploreCourses": "ኮርሶችን አስስ",
+    "noCourses": "እስካሁን ምንም ኮርስ አልተመዘገብክም።",
+    "startExploring": "ማሰስ ጀምር"
+  },
+  "common": {
+    "loading": "በመጫን ላይ...",
+    "error": "የሆነ ችግር ተፈጥሯል",
+    "retry": "እንደገና ሞክር",
+    "save": "አስቀምጥ",
+    "cancel": "ሰርዝ",
+    "continue": "ቀጥል",
+    "start": "ጀምር",
+    "next": "ቀጣይ",
+    "previous": "ቀዳሚ",
+    "complete": "አጠናቅ",
+    "progress": "እድገት"
+  }
+}
