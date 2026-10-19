@@ -20,10 +20,10 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    await new Promise((r) => setTimeout(r, 600))
+    await new Promise((r) => setTimeout(r, 400))
 
-    if (email && password.length >= 6) {
-      login(email)
+    if (email.trim() && password.length >= 6) {
+      login(email.trim())
       navigate('/dashboard')
     } else {
       setError(t('auth.invalidCredentials') || 'Invalid email or password')
@@ -47,7 +47,9 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
             <h1 className="text-2xl font-bold text-gray-900">{t('auth.login')}</h1>
-            <p className="mt-2 text-sm text-gray-600">{t('auth.hasAccount')}</p>
+            <p className="mt-2 text-sm text-gray-600">
+              {t('app.tagline')} · mock login (any email, password ≥ 6 chars)
+            </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
               {error && (
@@ -78,6 +80,7 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     required
+                    minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 pr-10 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
@@ -87,16 +90,11 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <Link to="/forgot-password" className="text-indigo-600 hover:text-indigo-700">
-                  {t('auth.forgotPassword')}
-                </Link>
               </div>
 
               <button
