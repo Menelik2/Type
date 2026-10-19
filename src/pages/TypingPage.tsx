@@ -34,16 +34,23 @@ export default function TypingPage() {
   const [showKeyboard, setShowKeyboard] = useState(
     () => getSettings().showAmharicKeyboardDefault
   )
+  const [resultsVersion, setResultsVersion] = useState(0)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const [, setTick] = useState(0)
+  const savedRef = useRef(false)
+  const phaseRef = useRef<Phase>('idle')
+  const startedAtRef = useRef<number | null>(null)
+
+  phaseRef.current = phase
+  startedAtRef.current = startedAt
 
   const reset = useCallback(() => {
+    savedRef.current = false
     setInput('')
     setPhase('idle')
     setStartedAt(null)
     setEndedAt(null)
     setLiveMs(0)
-    inputRef.current?.focus()
+    requestAnimationFrame(() => inputRef.current?.focus())
   }, [])
 
   useEffect(() => {
@@ -56,33 +63,41 @@ export default function TypingPage() {
 
   useEffect(() => {
     if (phase !== 'running' || !startedAt) return
-    const id = window.setInterval(() => setLiveMs(Date.now() - startedAt), 100)
+    const id = window.setInterval(() => setLiveMs(Date.now() - startedAt), 200)
     return () => clearInterval(id)
   }, [phase, startedAt])
 
   const target = passage?.text || ''
-  const { statuses, correct, errors } = compareInput(target, input)
-  const targetLen = graphemes(target).length
-  const inputLen = graphemes(input).length
-  const done = inputLen >= targetLen && targetLen > 0 && phase === 'running'
+  const targetChars = useMemo(() => graphemes(target), [target])
+  const targetLen = targetChars.length
 
+  const { statuses, correct, errors } = compareInput(target, input)
+  const inputLen = graphemes(input).length
+
+  /** Finish once the learner has typed the full passage length (once only). */
   useEffect(() => {
-    if (!done || !startedAt || !passage) return
+    if (phase !== 'running' || !startedAt || !passage || targetLen === 0) return
+    if (inputLen < targetLen) return
+    if (savedRef.current) return
+
+    savedRef.current = true
     const end = Date.now()
+    const durationMs = Math.max(end - startedAt, 1)
+    const { correct: c, errors: e } = compareInput(target, input)
+
     setEndedAt(end)
     setPhase('done')
-    const durationMs = end - startedAt
     saveTypingResult({
       lang,
       passageId: passage.id,
-      wpm: calcWpm(correct, durationMs),
-      accuracy: calcAccuracy(correct, correct + errors),
-      correctChars: correct,
-      totalTyped: correct + errors,
+      wpm: calcWpm(c, durationMs),
+      accuracy: calcAccuracy(c, c + e),
+      correctChars: c,
+      totalTyped: c + e,
       durationMs,
     })
-    setTick((x) => x + 1)
-  }, [done, startedAt, passage, lang, correct, errors])
+    setResultsVersion((v) => v + 1)
+  }, [phase, startedAt, passage, targetLen, inputLen, input, target, lang])
 
   const durationMs =
     phase === 'done' && startedAt && endedAt
@@ -91,19 +106,33 @@ export default function TypingPage() {
         ? liveMs
         : 0
 
-  const wpm = calcWpm(correct, durationMs || 1)
+  const wpm =
+    phase === 'idle' || durationMs <= 0 ? 0 : calcWpm(correct, durationMs)
   const accuracy = calcAccuracy(correct, correct + errors)
 
   const onChange = (value: string) => {
-    if (phase === 'done') return
-    if (phase === 'idle' && value.length > 0) {
+    if (phaseRef.current === 'done') return
+
+    // Cap at passage length so extra keystrokes do not inflate errors after finish
+    const g = graphemes(value)
+    const capped =
+      targetLen > 0 && g.length > targetLen
+        ? g.slice(0, targetLen).join('')
+        : value
+
+    if (phaseRef.current === 'idle' && capped.length > 0) {
+      const now = Date.now()
       setPhase('running')
-      setStartedAt(Date.now())
+      setStartedAt(now)
+      startedAtRef.current = now
     }
-    setInput(value)
+    setInput(capped)
   }
 
-  const results = getTypingResults().slice(0, 5)
+  const results = useMemo(
+    () => getTypingResults().slice(0, 5),
+    [resultsVersion]
+  )
   const best = bestWpm(lang)
 
   return (
@@ -173,7 +202,7 @@ export default function TypingPage() {
           className="mb-4 min-h-[4.5rem] text-lg leading-relaxed tracking-wide text-gray-800 sm:text-xl"
           aria-label="Passage to type"
         >
-          {graphemes(target).map((ch, idx) => {
+          {targetChars.map((ch, idx) => {
             const st = statuses[idx] || 'pending'
             return (
               <span
@@ -230,7 +259,8 @@ export default function TypingPage() {
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-gray-500">
             {phase === 'idle' && 'Typing starts the timer.'}
-            {phase === 'running' && `${Math.round(durationMs / 1000)}s · keep going`}
+            {phase === 'running' &&
+              `${Math.round(durationMs / 1000)}s · ${inputLen}/${targetLen} chars`}
             {phase === 'done' && 'Finished — result saved.'}
           </p>
           <button
