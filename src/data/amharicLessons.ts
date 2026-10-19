@@ -160,7 +160,6 @@ export const FIDEL_FAMILIES: Record<string, FidelFamily> = {
 }
 
 export const amharicLessonContent: Record<string, AmharicLessonContent> = {
-  // ── Amharic Fidel Basics ───────────────────────────────────────
   l1: {
     type: 'fidel_intro',
     title: 'What is Fidel?',
@@ -335,12 +334,8 @@ Learning Fidel family by family is the traditional and most effective way.`,
       },
     ],
   },
-
-  // ── Amharic Reading Practice ───────────────────────────────────
-  // Re-using l1/l2 ids under the reading course — content keyed same way
 }
 
-// Extra content for the reading course (same lesson id keys under different course context)
 export const amharicReadingContent: Record<string, AmharicLessonContent> = {
   l1: {
     type: 'vocab',
@@ -392,7 +387,7 @@ I have a book.',
     exercises: [
       {
         type: 'multiple_choice',
-        question: 'What is the speaker\'s name?',
+        question: "What is the speaker's name?",
         options: ['Sara', 'Abebe', 'Daniel', 'Hanna'],
         correctIndex: 1,
       },
@@ -403,11 +398,11 @@ I have a book.',
         correctIndex: 1,
       },
       {
-        type: 'true_false' as any,
-        question: 'The speaker is a teacher.',
-        // fallback handled in renderer
-        options: ['True', 'False'],
+        type: 'multiple_choice',
+        question: 'Is the speaker a teacher?',
+        options: ['Yes', 'No'],
         correctIndex: 1,
+        explanation: 'The speaker says "እኔ ተማሪ ነኝ" — I am a student.',
       },
     ],
   },
