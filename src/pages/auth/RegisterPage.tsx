@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Languages, Eye, EyeOff } from 'lucide-react'
 import LanguageSwitcher from '../../components/LanguageSwitcher'
+import { useAuth } from '../../hooks/useAuth'
 
 export default function RegisterPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,10 +21,10 @@ export default function RegisterPage() {
     setError('')
     setLoading(true)
 
-    await new Promise((r) => setTimeout(r, 800))
+    await new Promise((r) => setTimeout(r, 600))
 
     if (email && password.length >= 6 && name.trim()) {
-      localStorage.setItem('mockUser', JSON.stringify({ email, name }))
+      login(email, name)
       navigate('/dashboard')
     } else {
       setError(t('auth.invalidCredentials') || 'Please fill all fields correctly')
