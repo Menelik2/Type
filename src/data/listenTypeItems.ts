@@ -38,11 +38,15 @@ export const listenTypeItems: ListenItem[] = [
   { id: 'en-m9', lang: 'en', text: 'Please speak slowly.', level: 'medium' },
   { id: 'en-m10', lang: 'en', text: 'I do not understand this word.', level: 'medium' },
 
-  // English hard
+  // English hard / pro
   { id: 'en-h1', lang: 'en', text: 'By the time he arrived, the meeting had already started.', level: 'hard' },
   { id: 'en-h2', lang: 'en', text: 'If I had known about the test, I would have studied more.', level: 'hard' },
   { id: 'en-h3', lang: 'en', text: 'Learning a new language takes practice every day.', level: 'hard' },
   { id: 'en-h4', lang: 'en', text: 'Could you tell me the way to the market?', level: 'hard' },
+  { id: 'en-h5', lang: 'en', text: 'Although it was difficult, we made significant progress.', level: 'hard' },
+  { id: 'en-h6', lang: 'en', text: 'Education is essential for the whole community.', level: 'hard' },
+  { id: 'en-h7', lang: 'en', text: 'I study in order to improve my communication skills.', level: 'hard' },
+  { id: 'en-h8', lang: 'en', text: 'According to the teacher, the exam is next week.', level: 'hard' },
 
   // Amharic easy
   { id: 'am-e1', lang: 'am', text: 'ሰላም', support: 'Hello / Peace', level: 'easy' },
@@ -74,7 +78,7 @@ export const listenTypeItems: ListenItem[] = [
   { id: 'am-m9', lang: 'am', text: 'አልገባኝም', support: "I don't understand", level: 'medium' },
   { id: 'am-m10', lang: 'am', text: 'እባክህ ድገም', support: 'Please repeat', level: 'medium' },
 
-  // Amharic hard
+  // Amharic hard / pro
   {
     id: 'am-h1',
     lang: 'am',
@@ -94,6 +98,27 @@ export const listenTypeItems: ListenItem[] = [
     lang: 'am',
     text: 'ገበያ የት ነው?',
     support: 'Where is the market?',
+    level: 'hard',
+  },
+  {
+    id: 'am-h4',
+    lang: 'am',
+    text: 'ትምህርት ለሁሉም አስፈላጊ ነው',
+    support: 'Education is essential for everyone',
+    level: 'hard',
+  },
+  {
+    id: 'am-h5',
+    lang: 'am',
+    text: 'በየቀኑ መለማመድ እድገት ያመጣል',
+    support: 'Daily practice brings progress',
+    level: 'hard',
+  },
+  {
+    id: 'am-h6',
+    lang: 'am',
+    text: 'ምንም እንኳን ከባድ ቢሆን እድገት አደረግን',
+    support: 'Although it was hard, we made progress',
     level: 'hard',
   },
 ]
