@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Languages, Eye, EyeOff } from 'lucide-react'
 import LanguageSwitcher from '../../components/LanguageSwitcher'
+import { useAuth } from '../../hooks/useAuth'
 
 export default function LoginPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -18,11 +20,10 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    // Mock auth for Phase 1 (no Supabase keys yet)
-    await new Promise((r) => setTimeout(r, 800))
+    await new Promise((r) => setTimeout(r, 600))
 
     if (email && password.length >= 6) {
-      localStorage.setItem('mockUser', JSON.stringify({ email, name: email.split('@')[0] }))
+      login(email)
       navigate('/dashboard')
     } else {
       setError(t('auth.invalidCredentials') || 'Invalid email or password')
