@@ -1,6 +1,5 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 import {
   LayoutDashboard,
   BookOpen,
@@ -10,10 +9,11 @@ import {
   BarChart3,
   Settings,
   Menu,
+  Shield,
 } from 'lucide-react'
 import { useState } from 'react'
 import LanguageSwitcher from '../LanguageSwitcher'
-import { cn } from '../../lib/utils'
+import { isStaff } from '../../lib/admin'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, key: 'dashboard' },
@@ -30,10 +30,10 @@ const navItems = [
 export default function Layout() {
   const { t } = useTranslation()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const staff = isStaff()
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Desktop Sidebar */}
       <aside className="hidden w-64 flex-shrink-0 border-r border-gray-200 bg-white lg:block">
         <div className="flex h-16 items-center gap-2 border-b border-gray-100 px-5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
@@ -52,12 +52,19 @@ export default function Layout() {
               {t(`nav.${key}`)}
             </Link>
           ))}
+          {staff && (
+            <Link
+              to="/admin"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50"
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          )}
         </nav>
       </aside>
 
-      {/* Main content */}
       <div className="flex flex-1 flex-col">
-        {/* Top bar */}
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-6">
           <button
             className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden"
@@ -70,6 +77,14 @@ export default function Layout() {
 
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
+            {staff && (
+              <Link
+                to="/admin"
+                className="hidden rounded-lg px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 sm:inline"
+              >
+                Admin
+              </Link>
+            )}
             <Link
               to="/profile"
               className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-medium text-indigo-700"
@@ -79,7 +94,6 @@ export default function Layout() {
           </div>
         </header>
 
-        {/* Mobile nav drawer */}
         {mobileOpen && (
           <div className="fixed inset-0 z-50 lg:hidden">
             <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
@@ -102,12 +116,21 @@ export default function Layout() {
                     {t(`nav.${key}`)}
                   </Link>
                 ))}
+                {staff && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+                  >
+                    <Shield className="h-4 w-4" />
+                    Admin
+                  </Link>
+                )}
               </nav>
             </div>
           </div>
         )}
 
-        {/* Page content */}
         <main className="flex-1 p-4 lg:p-6">
           <Outlet />
         </main>
