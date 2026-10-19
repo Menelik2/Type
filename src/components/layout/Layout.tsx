@@ -22,8 +22,8 @@ const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, key: 'dashboard' },
   { to: '/my-courses', icon: BookOpen, key: 'myCourses' },
   { to: '/courses', icon: Compass, key: 'explore' },
-  { to: '/learn/english', icon: Languages, key: 'learnEnglish' },
-  { to: '/learn/amharic', icon: Languages, key: 'learnAmharic' },
+  { to: '/courses?lang=en', icon: Languages, key: 'learnEnglish' },
+  { to: '/courses?lang=am', icon: Languages, key: 'learnAmharic' },
   { to: '/vocabulary', icon: BookOpen, key: 'vocabulary' },
   { to: '/practice/audio', icon: Headphones, key: 'listenType' },
   { to: '/typing', icon: Keyboard, key: 'typing' },
@@ -35,23 +35,22 @@ export default function Layout() {
   const { t } = useTranslation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [staff, setStaff] = useState(() => isStaff())
+  const [displayName, setDisplayName] = useState(() => getSettings().displayName || '')
   const { user } = useAuth()
-  const settings = getSettings()
-  const avatarLetter = (
-    settings.displayName ||
-    user?.name ||
-    user?.email ||
-    'U'
-  )
+
+  const avatarLetter = (displayName || user?.name || user?.email || 'U')
     .charAt(0)
     .toUpperCase()
 
   useEffect(() => {
-    const sync = () => setStaff(isStaff())
+    const sync = () => {
+      setStaff(isStaff())
+      setDisplayName(getSettings().displayName || '')
+    }
     sync()
     window.addEventListener('storage', sync)
     window.addEventListener('focus', sync)
-    const id = window.setInterval(sync, 1500)
+    const id = window.setInterval(sync, 2000)
     return () => {
       window.removeEventListener('storage', sync)
       window.removeEventListener('focus', sync)
@@ -76,7 +75,9 @@ export default function Layout() {
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700"
             >
               <Icon className="h-4 w-4" />
-              {t(`nav.${key}`, { defaultValue: key === 'listenType' ? 'Listen & Type' : key })}
+              {t(`nav.${key}`, {
+                defaultValue: key === 'listenType' ? 'Listen & Type' : key,
+              })}
             </Link>
           ))}
           {staff && (
@@ -125,11 +126,18 @@ export default function Layout() {
 
         {mobileOpen && (
           <div className="fixed inset-0 z-50 lg:hidden">
-            <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
+            <div
+              className="absolute inset-0 bg-black/30"
+              onClick={() => setMobileOpen(false)}
+            />
             <div className="absolute left-0 top-0 h-full w-72 bg-white shadow-xl">
               <div className="flex h-16 items-center justify-between border-b px-4">
                 <span className="font-semibold">{t('app.name')}</span>
-                <button onClick={() => setMobileOpen(false)} className="p-2" aria-label="Close menu">
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  className="p-2"
+                  aria-label="Close menu"
+                >
                   ✕
                 </button>
               </div>
@@ -142,7 +150,9 @@ export default function Layout() {
                     className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-indigo-50"
                   >
                     <Icon className="h-4 w-4" />
-                    {t(`nav.${key}`, { defaultValue: key === 'listenType' ? 'Listen & Type' : key })}
+                    {t(`nav.${key}`, {
+                      defaultValue: key === 'listenType' ? 'Listen & Type' : key,
+                    })}
                   </Link>
                 ))}
                 {staff && (
